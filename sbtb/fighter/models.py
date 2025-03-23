@@ -6,12 +6,8 @@ from sqlalchemy.dialects.postgresql import ENUM
 from sbtb.database.session import Base
 
 
-class FigherWeightClassAssociation(Base):
+class FighterWeightClassAssociation(Base):
     __tablename__ = "fighter_weight_class_association"
-
-    id = None
-    created_at = None
-    uuid = None
 
     fighter_id: Mapped[int] = mapped_column(
         ForeignKey("fighters.id"),
@@ -25,10 +21,6 @@ class FigherWeightClassAssociation(Base):
 
 class FighterFightOrganizationAssociation(Base):
     __tablename__ = "fighter_fight_organization_association"
-
-    id = None
-    created_at = None
-    uuid = None
 
     fighter_id: Mapped[int] = mapped_column(
         ForeignKey("fighters.id"),
@@ -102,7 +94,7 @@ class Fighter(Base):
     )
 
     fighting_organizations: Mapped[list["FightOrganization"]] = relationship(
-        "FightingOrganization",
+        "FightOrganization",
         secondary="fighter_fight_organization_association",
         backref="fighters"
     )
