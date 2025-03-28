@@ -1,3 +1,4 @@
+import sys
 import logging
 
 from fastapi import FastAPI
@@ -7,6 +8,11 @@ from sbtb import routes
 from sbtb.core.config import settings
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+formatter = logging.Formatter("%(asctime)s - %(levelname)s - [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] - %(filename)s:%(funcName)s:%(lineno)s - %(message)s")
+stream_handler = logging.StreamHandler(sys.stdout)
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 cors_allowed_origins = [
     "https://sbtb.io",

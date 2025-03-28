@@ -12,7 +12,7 @@ class FighterSchema(BaseModel):
     weight_classes: List[str]
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class WeightClassSchema(BaseModel):
@@ -21,11 +21,11 @@ class WeightClassSchema(BaseModel):
     lower_limit: Optional[int] = None
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class FightingOrganizationSchema(BaseModel):
     name: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
