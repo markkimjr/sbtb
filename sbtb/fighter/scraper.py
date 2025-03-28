@@ -18,15 +18,15 @@ class BaseScraper(ABC):
         return bs4.BeautifulSoup(html_source, 'lxml')
 
     @abstractmethod
-    def run_scraper(self) -> List[Any]:
+    async def run_scraper(self) -> List[Any]:
         pass
 
     @abstractmethod
-    def request_data(self) -> Optional[str]:
+    async def request_data(self) -> Optional[str]:
         pass
 
     @abstractmethod
-    def parse(self, raw_data: str) -> List[Any]:
+    async def parse(self, raw_data: str) -> List[Any]:
         pass
 
 
@@ -34,13 +34,13 @@ class BoxingScraper(BaseScraper):
     URL = settings.BOXING_RANKINGS_URL
     HEADERS = settings.BOXING_HEADERS
 
-    def run_scraper(self) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
-        raw_data = self.request_data()
+    async def run_scraper(self) -> Optional[Dict[str, Dict[str, List[RawBoxerSchema]]]]:
+        raw_data = await self.request_data()
         if not raw_data:
             return None
-        return self.parse(raw_data=raw_data)
+        return await self.parse(raw_data=raw_data)
 
-    def request_data(self) -> Optional[str]:
+    async def request_data(self) -> Optional[str]:
         try:
             res = get_request(url=self.URL, headers=self.HEADERS)
             if res.status_code == 200:
@@ -50,7 +50,7 @@ class BoxingScraper(BaseScraper):
             logger.error(f"ERROR OCCURRED WHILE SCRAPING FIGHTERS {traceback.format_exc()}")
         return None
 
-    def parse(self, raw_data: str) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
+    async def parse(self, raw_data: str) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
         parsed_rankings = {}
         soup = self.load_soup(html_source=raw_data)
         wrapper_div = soup.find("div", {"class": "card card-wrapper bg-black text-white p-2.5 md:p-5"})

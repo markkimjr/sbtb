@@ -15,7 +15,7 @@ class BoxerScraperService:
 
     async def scrape_and_save_fighters(self) -> Optional[List[FighterSchema]]:
         try:
-            grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = self.scraper.run_scraper()
+            grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
             if not grouped_rankings:
                 return None
 
