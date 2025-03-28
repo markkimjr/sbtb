@@ -1,6 +1,11 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+class RawBoxerSchema(BaseModel):
+    name: str
+    rank: int
+    is_champ: Optional[bool] = False
+
 class FighterSchema(BaseModel):
     name: str
     nickname: Optional[str] = None
@@ -17,6 +22,8 @@ class FighterSchema(BaseModel):
 
 class WeightClassSchema(BaseModel):
     name: str
+    pounds: Optional[int] = None
+    kilos: Optional[int] = None
     upper_limit: Optional[int] = None
     lower_limit: Optional[int] = None
 

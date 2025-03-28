@@ -1,5 +1,6 @@
 import sys
 import logging
+import colorlog
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -9,9 +10,18 @@ from sbtb.core.config import settings
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
-formatter = logging.Formatter("%(asctime)s - %(levelname)s - [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] - %(filename)s:%(funcName)s:%(lineno)s - %(message)s")
+colored_formatter = colorlog.ColoredFormatter(
+    "%(log_color)s%(asctime)s - %(levelname)s - [%(processName)s: %(process)d] [%(threadName)s: %(thread)d] - %(filename)s:%(funcName)s:%(lineno)s - %(message)s",
+    log_colors={
+        "DEBUG": "cyan",
+        "INFO": "green",
+        "WARNING": "yellow",
+        "ERROR": "red",
+        "CRITICAL": "red,bg_white",
+    },
+)
 stream_handler = logging.StreamHandler(sys.stdout)
-stream_handler.setFormatter(formatter)
+stream_handler.setFormatter(colored_formatter)
 logger.addHandler(stream_handler)
 
 cors_allowed_origins = [

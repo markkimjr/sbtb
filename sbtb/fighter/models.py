@@ -1,7 +1,8 @@
 from enum import Enum
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime
+from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sbtb.database.session import Base
 
@@ -17,6 +18,8 @@ class FighterWeightClassAssociation(Base):
         ForeignKey("weight_classes.id"),
         primary_key=True,
     )
+    current_rank = Column(Integer, nullable=True)
+    is_champ = Column(Boolean, default=False)
 
 
 class FighterFightOrganizationAssociation(Base):
@@ -60,6 +63,8 @@ class WeightClass(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
+    pounds = Column(Integer, nullable=True)
+    kilos = Column(Integer, nullable=True)
     upper_limit = Column(Integer, nullable=True)
     lower_limit = Column(Integer, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
@@ -70,6 +75,23 @@ class WeightClass(Base):
         "Fighter",
         secondary="fighter_weight_class_association",
         backref="weight_classes"
+    )
+
+
+class Rank(Base):
+    __tablename__ = "ranks"
+
+    id = Column(Integer, primary_key=True, index=True)
+    rank = Column(Integer, nullable=False)
+    fighter_id = Column(Integer, ForeignKey("fighters.id"), nullable=False)
+    weight_class_id = Column(Integer, ForeignKey("weight_classes.id"), nullable=False)
+    organization_id = Column(Integer, ForeignKey("fight_organizations.id"), nullable=False)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    deleted_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("rank", "weight_class_id", "organization_id"),
     )
 
 

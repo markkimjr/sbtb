@@ -1,4 +1,5 @@
 import logging
+import json
 from pathlib import Path
 from typing import List, Optional
 
@@ -27,9 +28,18 @@ class Settings(BaseSettings):
 
     DATABASE_URI: Optional[str] = None
 
+    BOXING_RANKINGS_URL: Optional[str] = None
+    BOXING_HEADERS: Optional[dict] = None
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
 
+    @classmethod
+    def parse_obj(cls, obj):
+        for key, value in obj.items():
+            if "_HEADERS" in key and isinstance(value, str):
+                obj[key] = json.loads(value)
+        return super().model_validate(obj)
 
 settings = Settings()
