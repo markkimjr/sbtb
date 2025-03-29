@@ -3,7 +3,7 @@ from typing import List, Optional
 
 class RawBoxerSchema(BaseModel):
     name: str
-    rank: int
+    rank: float
     is_champ: Optional[bool] = False
 
 class FighterSchema(BaseModel):
@@ -13,8 +13,16 @@ class FighterSchema(BaseModel):
     wins: Optional[int] = None
     losses: Optional[int] = None
     draws: Optional[int] = None
-    fighting_organizations: List[str]
-    weight_classes: List[str]
+
+    class Config:
+        from_attributes = True
+
+
+class RankSchema(BaseModel):
+    rank: float
+    fighter_id: int
+    weight_class_id: int
+    organization_id: int
 
     class Config:
         from_attributes = True

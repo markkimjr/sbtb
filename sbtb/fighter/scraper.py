@@ -1,16 +1,14 @@
 import traceback
-import logging
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
 import bs4
 
 from sbtb.core.config import settings
+from sbtb.core.logging import logger
 from sbtb.core.http_requests import get_request
 from sbtb.fighter.schemas import WeightClassSchema, RawBoxerSchema
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
 
 class BaseScraper(ABC):
     @staticmethod
@@ -78,7 +76,7 @@ class BoxingScraper(BaseScraper):
                 pounds=pounds
             )
 
-            print(f"parsing weight class: {weight_class}")
+            logger.info(f"parsing weight class: {weight_class}")
             parsed_rankings[division] = self.parse_division(rankings_div=rankings_div)
             current_idx += 2
 
@@ -88,35 +86,57 @@ class BoxingScraper(BaseScraper):
         grouped_rankings = {}
         organizations = rankings_div.find_all("div", recursive=False)
         for organization_div in organizations:
-            organization_name = organization_div.find("h5").text.lower()
+            organization_name = organization_div.find("h5").text.upper()
             main_rankings_div = organization_div.find("div", recursive=False)
             fighters = main_rankings_div.find_all("div", recursive=False)
 
             processed_fighters = []
             for i, fighter_div in enumerate(fighters):
-                print(f"parsing fighter {i+1}/{len(fighters)} for {organization_name}")
+                logger.info(f"parsing fighter {i+1}/{len(fighters)} for {organization_name}")
                 raw_boxer = self.parse_fighter(fighter_div=fighter_div, idx=i)
-                processed_fighters.append(raw_boxer)
+                processed_fighters.extend(raw_boxer)
             grouped_rankings[organization_name] = processed_fighters
 
         return grouped_rankings
 
-    def parse_fighter(self, fighter_div: bs4.element.Tag, idx: int) -> RawBoxerSchema:
+    def parse_fighter(self, fighter_div: bs4.element.Tag, idx: int) -> List[RawBoxerSchema]:
         name_container = fighter_div.find("div", recursive=False)
         if idx == 0:
             name_container = fighter_div
 
         name_span = name_container.find("span")
+
+        # for interim champions, create 2 fighters
+        if name_span.find("br"):
+            parts = [str(part).strip() for part in name_span.contents if part != "<br>"]
+            primary_name = parts[0].lower()  # First part before <br>
+            secondary_name = parts[2].lower()
+            primary_champ = RawBoxerSchema(
+                name=primary_name,
+                rank=idx,
+                is_champ=True
+            )
+            if "(" in secondary_name:
+                secondary_name = secondary_name.split("(")[0].strip()
+            secondary_champ = RawBoxerSchema(
+                name=secondary_name,
+                rank=0.5,
+                is_champ=True
+            )
+            return [primary_champ, secondary_champ]
+
         name_str = name_span.text
+        if "interim" in name_str:
+            pass
         name = name_str.split("(")[0].strip().lower()
         fighter = RawBoxerSchema(
             name=name,
             rank=idx,
             is_champ=True if idx == 0 else False
         )
-        return fighter
+        return [fighter]
 
-    # if str = 175 lbs, return 175 (int)
+    # if str = "175 lbs", return 175 (int)
     @staticmethod
     def extract_pounds(pounds_str: str) -> int:
         return int(pounds_str.split()[0])

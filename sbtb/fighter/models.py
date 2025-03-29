@@ -1,38 +1,9 @@
 from enum import Enum
-from sqlalchemy import ForeignKey, Column, Integer, String, DateTime, Boolean
+from sqlalchemy import ForeignKey, Column, Integer, Double, String, DateTime
 from sqlalchemy.sql import func
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM
 from sbtb.database.session import Base
-
-
-class FighterWeightClassAssociation(Base):
-    __tablename__ = "fighter_weight_class_association"
-
-    fighter_id: Mapped[int] = mapped_column(
-        ForeignKey("fighters.id"),
-        primary_key=True,
-    )
-    weight_class_id: Mapped[int] = mapped_column(
-        ForeignKey("weight_classes.id"),
-        primary_key=True,
-    )
-    current_rank = Column(Integer, nullable=True)
-    is_champ = Column(Boolean, default=False)
-
-
-class FighterFightOrganizationAssociation(Base):
-    __tablename__ = "fighter_fight_organization_association"
-
-    fighter_id: Mapped[int] = mapped_column(
-        ForeignKey("fighters.id"),
-        primary_key=True,
-    )
-    fight_organization_id: Mapped[int] = mapped_column(
-        ForeignKey("fight_organizations.id"),
-        primary_key=True,
-    )
 
 
 class FightOrganization(Base):
@@ -51,12 +22,6 @@ class FightOrganization(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime, nullable=True)
 
-    fighters: Mapped[list["Fighter"]] = relationship(
-        "Fighter",
-        secondary="fighter_fight_organization_association",
-        backref="fight_organizations"
-    )
-
 
 class WeightClass(Base):
     __tablename__ = "weight_classes"
@@ -71,18 +36,12 @@ class WeightClass(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime, nullable=True)
 
-    fighters: Mapped[list["Fighter"]] = relationship(
-        "Fighter",
-        secondary="fighter_weight_class_association",
-        backref="weight_classes"
-    )
-
 
 class Rank(Base):
     __tablename__ = "ranks"
 
     id = Column(Integer, primary_key=True, index=True)
-    rank = Column(Integer, nullable=False)
+    rank = Column(Double, nullable=False)
     fighter_id = Column(Integer, ForeignKey("fighters.id"), nullable=False)
     weight_class_id = Column(Integer, ForeignKey("weight_classes.id"), nullable=False)
     organization_id = Column(Integer, ForeignKey("fight_organizations.id"), nullable=False)
@@ -108,16 +67,3 @@ class Fighter(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime, nullable=True)
-
-    weight_classes: Mapped[list["WeightClass"]] = relationship(
-        "WeightClass",
-        secondary="fighter_weight_class_association",
-        backref="fighters"
-    )
-
-    fighting_organizations: Mapped[list["FightOrganization"]] = relationship(
-        "FightOrganization",
-        secondary="fighter_fight_organization_association",
-        backref="fighters"
-    )
-

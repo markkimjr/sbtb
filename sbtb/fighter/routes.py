@@ -3,15 +3,19 @@ from typing import List
 from fastapi import Depends
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, Response
+from fastapi.encoders import jsonable_encoder
 
 from sbtb.database.session import DbSession
 
-from sbtb.fighter.schemas import FighterSchema
-from sbtb.fighter.dependencies import get_boxer_scraper_service
+from sbtb.fighter.schemas import FighterSchema, RankSchema
+from sbtb.fighter.dependencies import get_boxer_repo, get_boxer_scraper, get_boxer_org_repo, get_rank_repo, \
+    get_weight_class_repo
 from sbtb.fighter.service import BoxerScraperService
-
+from sbtb.fighter.repository import FighterRepo, RankRepo, FightingOrganizationRepo, WeightClassRepo
+from sbtb.fighter.scraper import BoxingScraper
 
 router = APIRouter(prefix="/fighter")
+
 
 @router.get("/",
             response_description="Fighter Root",
@@ -23,24 +27,23 @@ async def fighter_root() -> Response:
     )
 
 
-# create fighter route (post)
-@router.post("/",
-             response_description="Create a new fighter",
-             response_model=FighterSchema,
-             status_code=status.HTTP_201_CREATED,
-             tags=["fighters"])
-async def create_fighter(fighter: FighterSchema, db: DbSession):
-    pass
-
-
-@router.get("/scrape-and-save",
+@router.get("/update-boxer-ranks",
             response_description="Scrape fighters",
-            response_model=List[FighterSchema],
+            response_model=List[RankSchema],
             include_in_schema=False,
             tags=["fighters"])
-async def scrape_and_save_fighter(service: BoxerScraperService = Depends(get_boxer_scraper_service)) -> Response:
-    boxers: List[FighterSchema] = await service.scrape_and_save_fighters()
+async def scrape_and_save_boxer_ranks(scraper: BoxingScraper = Depends(get_boxer_scraper),
+                                      fighter_repo: FighterRepo = Depends(get_boxer_repo),
+                                      organization_repo: FightingOrganizationRepo = Depends(get_boxer_org_repo),
+                                      rank_repo: RankRepo = Depends(get_rank_repo),
+                                      weight_class_repo: WeightClassRepo = Depends(get_weight_class_repo)
+                                      ) -> Response:
+    service = BoxerScraperService(scraper=scraper, fighter_repo=fighter_repo,
+                                  organization_repo=organization_repo,
+                                  rank_repo=rank_repo,
+                                  weight_class_repo=weight_class_repo)
+    updated_ranks: List[RankSchema] = await service.scrape_and_update_boxer_ranks()
     return JSONResponse(
-        content=boxers,
+        content={"updated_ranks": jsonable_encoder(updated_ranks)},
         status_code=status.HTTP_200_OK,
     )
