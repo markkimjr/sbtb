@@ -2,7 +2,7 @@ import traceback
 import logging
 from typing import List, Dict, Optional
 
-from sbtb.fighter.scraper import BoxingScraper
+from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
 from sbtb.fighter.repository import FighterRepo, FightingOrganizationRepo, RankRepo, WeightClassRepo
 from sbtb.fighter.schemas import FighterSchema, RawBoxerSchema, RankSchema
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 
 class BoxerScraperService:
-    def __init__(self, scraper: BoxingScraper, fighter_repo: FighterRepo, organization_repo: FightingOrganizationRepo,
+    def __init__(self, scraper: BoxingRankScraper, fighter_repo: FighterRepo, organization_repo: FightingOrganizationRepo,
                  rank_repo: RankRepo, weight_class_repo: WeightClassRepo):
         self.scraper = scraper
         self.fighter_repo = fighter_repo
@@ -18,7 +18,7 @@ class BoxerScraperService:
         self.rank_repo = rank_repo
         self.weight_class_repo = weight_class_repo
 
-    async def scrape_and_update_boxer_ranks(self) -> Optional[List[RankSchema]]:
+    async def scrape_and_update_boxing_ranks(self) -> Optional[List[RankSchema]]:
         try:
             grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
             if not grouped_rankings:
@@ -58,9 +58,29 @@ class BoxerScraperService:
                         ranks_to_upsert.append(rank)
 
             saved_ranks = await self.rank_repo.bulk_upsert(ranks=ranks_to_upsert)
-            logger.info(f"Updated {len(saved_ranks)} fighters")
+            logger.info(f"Updated {len(saved_ranks)} boxing rankings")
 
             return ranks_to_upsert
         except Exception as e:
-            logger.error(f"ERROR OCCURRED WHILE SCRAPING FIGHTERS {traceback.format_exc()}")
+            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
+            return None
+
+
+class BoxingFightCardService:
+    def __init__(self, scraper: BoxingFightCardScraper, fighter_repo: FighterRepo,
+                 organization_repo: FightingOrganizationRepo,rank_repo: RankRepo, weight_class_repo: WeightClassRepo):
+        self.scraper = scraper
+        self.fighter_repo = fighter_repo
+        self.organization_repo = organization_repo
+        self.rank_repo = rank_repo
+        self.weight_class_repo = weight_class_repo
+
+    async def scrape_and_update_boxing_fight_cards(self) -> Optional[List[RankSchema]]:
+        try:
+            raw_fight_cards: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
+            if not raw_fight_cards:
+                return None
+
+        except Exception as e:
+            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING FIGHT CARDS {traceback.format_exc()}")
             return None

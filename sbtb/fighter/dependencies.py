@@ -1,10 +1,14 @@
 from sbtb.database.session import DbSession
-from sbtb.fighter.scraper import BoxingScraper
+from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
 from sbtb.fighter.repository import FighterRepo, FightingOrganizationRepo, RankRepo, WeightClassRepo
 
 
-async def get_boxer_scraper():
-    return BoxingScraper()
+async def get_boxing_scraper():
+    return BoxingRankScraper()
+
+
+async def get_boxing_fight_card_scraper():
+    return BoxingFightCardScraper()
 
 
 async def get_boxer_repo(db: DbSession) -> FighterRepo:

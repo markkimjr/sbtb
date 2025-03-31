@@ -46,3 +46,13 @@ class FightingOrganizationSchema(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class ScheduleSchema(BaseModel):
+    fighter_id: int
+    opponent_id: int
+    date: str
+    location: str
+
+    class Config:
+        from_attributes = True

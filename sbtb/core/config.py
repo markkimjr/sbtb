@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     DATABASE_URI: Optional[str] = None
 
     BOXING_RANKINGS_URL: Optional[str] = None
+    BOXING_SCHEDULE_URL: Optional[str] = None
     BOXING_HEADERS: Optional[dict] = None
 
     class Config:

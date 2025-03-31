@@ -1,4 +1,5 @@
 import traceback
+import json
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
@@ -28,7 +29,7 @@ class BaseScraper(ABC):
         pass
 
 
-class BoxingScraper(BaseScraper):
+class BoxingRankScraper(BaseScraper):
     URL = settings.BOXING_RANKINGS_URL
     HEADERS = settings.BOXING_HEADERS
 
@@ -45,7 +46,7 @@ class BoxingScraper(BaseScraper):
                 html_source = res.text
                 return html_source
         except Exception as e:
-            logger.error(f"ERROR OCCURRED WHILE SCRAPING FIGHTERS {traceback.format_exc()}")
+            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
         return None
 
     async def parse(self, raw_data: str) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
@@ -140,3 +141,32 @@ class BoxingScraper(BaseScraper):
     @staticmethod
     def extract_pounds(pounds_str: str) -> int:
         return int(pounds_str.split()[0])
+
+
+class BoxingFightCardScraper(BaseScraper):
+    URL = settings.BOXING_SCHEDULE_URL
+    HEADERS = settings.BOXING_HEADERS
+
+    async def run_scraper(self) -> Optional[Dict[str, Dict[str, List[RawBoxerSchema]]]]:
+        raw_data = await self.request_data()
+        if not raw_data:
+            return None
+        return await self.parse(raw_data=raw_data)
+
+    async def request_data(self) -> Optional[str]:
+        try:
+            res = get_request(url=self.URL, headers=self.HEADERS)
+            if res.status_code == 200:
+                html_source = res.text
+                return html_source
+        except Exception as e:
+            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING SCHEDULE {traceback.format_exc()}")
+        return None
+
+    async def parse(self, raw_data: str):
+        soup = self.load_soup(html_source=raw_data)
+        script_tags = soup.find_all("script", type="application/ld+json")
+        for script_tag in script_tags:
+            script_text = script_tag.text.strip()
+            if "Boxing Events" in script_text:
+                pass
