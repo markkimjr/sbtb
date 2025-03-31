@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+
 class RawBoxerSchema(BaseModel):
     name: str
     rank: float
     is_champ: Optional[bool] = False
+
 
 class FighterSchema(BaseModel):
     name: str

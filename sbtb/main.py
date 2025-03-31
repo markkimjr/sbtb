@@ -17,6 +17,7 @@ app = FastAPI(
     version=settings.VERSION,
 )
 
+
 async def on_startup() -> None:
     logger.info("FastAPI sbtb app running...")
 

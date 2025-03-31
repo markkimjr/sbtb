@@ -30,7 +30,8 @@ class FighterRepo:
         query = await self.db.execute(select(Fighter).where(Fighter.name == raw_fighter.name))
         fighter = query.scalars().first()
         if not fighter:
-            fighter = Fighter()
+            # add raw_fighter
+            fighter = Fighter(**raw_fighter.model_dump())
             self.db.add(fighter)
             await self.db.commit()
             await self.db.refresh(fighter)

@@ -106,7 +106,7 @@ class BoxingScraper(BaseScraper):
 
         name_span = name_container.find("span")
 
-        # for interim champions, create 2 fighters
+        # if there are 2 champions (i.e. champ + interim champion), return 2 fighters
         if name_span.find("br"):
             parts = [str(part).strip() for part in name_span.contents if part != "<br>"]
             primary_name = parts[0].lower()  # First part before <br>
@@ -116,6 +116,8 @@ class BoxingScraper(BaseScraper):
                 rank=idx,
                 is_champ=True
             )
+
+            # remove any text after "(" in the secondary name
             if "(" in secondary_name:
                 secondary_name = secondary_name.split("(")[0].strip()
             secondary_champ = RawBoxerSchema(
@@ -126,8 +128,6 @@ class BoxingScraper(BaseScraper):
             return [primary_champ, secondary_champ]
 
         name_str = name_span.text
-        if "interim" in name_str:
-            pass
         name = name_str.split("(")[0].strip().lower()
         fighter = RawBoxerSchema(
             name=name,

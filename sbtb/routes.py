@@ -15,7 +15,7 @@ async def root() -> Response:
         status_code=status.HTTP_200_OK,
     )
 
+
 @api_router.get("/ping", response_description="Ping", include_in_schema=False)
 async def ping() -> Response:
     return PlainTextResponse("pong")
-

@@ -5,9 +5,7 @@ from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, Response
 from fastapi.encoders import jsonable_encoder
 
-from sbtb.database.session import DbSession
-
-from sbtb.fighter.schemas import FighterSchema, RankSchema
+from sbtb.fighter.schemas import RankSchema
 from sbtb.fighter.dependencies import get_boxer_repo, get_boxer_scraper, get_boxer_org_repo, get_rank_repo, \
     get_weight_class_repo
 from sbtb.fighter.service import BoxerScraperService
