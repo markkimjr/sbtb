@@ -1,9 +1,10 @@
 from typing import Optional, List
+
 from sqlalchemy import select, or_
 
 from sbtb.database.session import DbSession
-from sbtb.fighter.schemas import FighterSchema, RankSchema
-from sbtb.fighter.models import Fighter, Rank, FightOrganization, WeightClass
+from sbtb.fighter.schemas import FighterSchema, RankSchema, FightCardSchema
+from sbtb.fighter.models import Fighter, Rank, FightOrganization, WeightClass, FightCard
 
 
 class FighterRepo:
@@ -69,6 +70,11 @@ class FighterRepo:
         await self.db.commit()
         return fighter_objects
 
+    async def save(self, fighter: Fighter) -> Fighter:
+        self.db.add(fighter)
+        await self.db.commit()
+        await self.db.refresh(fighter)
+        return fighter
 
 class RankRepo:
     def __init__(self, db: DbSession, *args, **kwargs):
@@ -141,3 +147,45 @@ class WeightClassRepo:
     async def get_all(self) -> List[WeightClass]:
         query = await self.db.execute(select(WeightClass))
         return query.scalars().all()
+
+
+class FightCardRepo:
+    def __init__(self, db: DbSession, *args, **kwargs):
+        self.db = db
+
+    async def get_by_id(self, fight_card_id: int) -> Optional[FightCard]:
+        return await self.db.get(FightCard, fight_card_id)
+
+    async def get_or_create(self, raw_fight_card: FightCardSchema, eager=False) -> FightCard:
+        query = await self.db.execute(
+            select(FightCard).where(FightCard.event_name == raw_fight_card.event_name)
+        )
+        fight_card = query.scalars().first()
+        if not fight_card:
+            fight_card = FightCard(**raw_fight_card.model_dump())
+            self.db.add(fight_card)
+            await self.db.commit()
+            await self.db.refresh(fight_card)
+        return fight_card
+
+    async def upsert(self, raw_fight_card: FightCardSchema) -> FightCard:
+        query = await self.db.execute(select(FightCard).where(FightCard.event_name == raw_fight_card.event_name))
+        existing_fight_card = query.scalars().first()
+
+        if existing_fight_card:
+            for key, value in raw_fight_card.model_dump().items():
+                setattr(existing_fight_card, key, value)
+            fight_card = existing_fight_card
+        else:
+            fight_card = FightCard(**raw_fight_card.model_dump())
+            self.db.add(fight_card)
+
+        await self.db.commit()
+        await self.db.refresh(fight_card)
+        return fight_card
+
+    async def save(self, fight_card: FightCard) -> FightCard:
+        self.db.add(fight_card)
+        await self.db.commit()
+        await self.db.refresh(fight_card)
+        return fight_card

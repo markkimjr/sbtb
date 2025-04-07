@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -48,11 +50,10 @@ class FightingOrganizationSchema(BaseModel):
         from_attributes = True
 
 
-class ScheduleSchema(BaseModel):
-    fighter_id: int
-    opponent_id: int
-    date: str
+class FightCardSchema(BaseModel):
+    event_name: str
     location: str
+    event_date: datetime
 
     class Config:
         from_attributes = True

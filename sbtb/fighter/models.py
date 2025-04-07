@@ -1,9 +1,11 @@
 from enum import Enum
+
 from sqlalchemy import ForeignKey, Column, Integer, Double, String, DateTime, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from sqlalchemy.schema import UniqueConstraint
 from sqlalchemy.dialects.postgresql import ENUM
+
 from sbtb.database.session import Base
 
 
@@ -62,6 +64,7 @@ fight_card_fighters = Table(
     Column("fighter_id", Integer, ForeignKey("fighters.id"), primary_key=True),
 )
 
+
 class Fighter(Base):
     __tablename__ = "fighters"
 
@@ -76,7 +79,8 @@ class Fighter(Base):
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    fight_cards = relationship("FightCard", secondary=fight_card_fighters, back_populates="fighters")
+    fight_cards = relationship("FightCard", secondary=fight_card_fighters, back_populates="fighters",
+                               lazy="selectin")
 
 
 class FightCard(Base):
@@ -85,10 +89,11 @@ class FightCard(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_name = Column(String, nullable=True)
     location = Column(String, nullable=True)
-    broadcasting_network = Column(String, nullable=True)
+    network = Column(String, nullable=True)
     event_date = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     deleted_at = Column(DateTime(timezone=True), nullable=True)
 
-    fighters = relationship("Fighter", secondary=fight_card_fighters, back_populates="fight_cards")
+    fighters = relationship("Fighter", secondary=fight_card_fighters, back_populates="fight_cards",
+                            lazy="selectin")
