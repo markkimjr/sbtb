@@ -256,6 +256,3 @@ class BoxingFightCardScraper(BaseScraper):
             logger.error(f"ERROR OCCURRED WHILE PARSING FIGHT CARD {traceback.format_exc()}")
 
         return fight_card
-
-
-

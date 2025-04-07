@@ -3,11 +3,14 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
+from sbtb.core.logging import logger
+
 
 class ChromeDriver:
     @staticmethod
     def _get_options(headless=True) -> Options:
         options = Options()
+        logger.info(f"driver headless mode: {headless}")
         options.add_argument("--headless=new")
         if not headless:
             options.headless = False
@@ -27,6 +30,7 @@ class ChromeDriver:
         return options
 
     def get_driver(self) -> webdriver.Chrome:
+        logger.info(f"------------------- Loading chrome driver ------------------")
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self._get_options())
         driver.execute_cdp_cmd(
             "Page.addScriptToEvaluateOnNewDocument",
