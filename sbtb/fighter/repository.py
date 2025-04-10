@@ -1,6 +1,8 @@
+import datetime
 from typing import Optional, List
 
 from sqlalchemy import select, or_
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 
 from sbtb.database.session import DbSession
 from sbtb.fighter.schemas import FighterSchema, RankSchema, FightCardSchema
@@ -76,6 +78,7 @@ class FighterRepo:
         await self.db.refresh(fighter)
         return fighter
 
+
 class RankRepo:
     def __init__(self, db: DbSession, *args, **kwargs):
         self.db = db
@@ -84,27 +87,26 @@ class RankRepo:
         return await self.db.get(RankSchema, rank_id)
 
     async def bulk_upsert(self, ranks: List[RankSchema]) -> List[Rank]:
-        rank_objects = []
-        for rank in ranks:
-            existing_rank = await self.db.execute(
-                select(Rank).where(
-                    Rank.fighter_id == rank.fighter_id,
-                    Rank.weight_class_id == rank.weight_class_id,
-                    Rank.organization_id == rank.organization_id
-                )
-            )
-            existing_rank = existing_rank.scalars().first()
-            if existing_rank:
-                for key, value in rank.model_dump().items():
-                    setattr(existing_rank, key, value)
-                rank_objects.append(existing_rank)
-            else:
-                new_rank = Rank(**rank.model_dump())
-                self.db.add(new_rank)
-                rank_objects.append(new_rank)
+        if not ranks:
+            return []
 
+        rank_dicts = [r.model_dump(exclude_unset=True) for r in ranks]
+
+        stmt = pg_insert(Rank).values(rank_dicts)
+
+        update_columns = {
+            "fighter_id": stmt.excluded.fighter_id,
+            "updated_at": datetime.datetime.now(datetime.UTC)
+        }
+
+        stmt = stmt.on_conflict_do_update(
+            index_elements=["rank", "weight_class_id", "organization_id"],
+            set_=update_columns
+        ).returning(Rank)
+
+        result = await self.db.execute(stmt)
         await self.db.commit()
-        return rank_objects
+        return result.fetchall()
 
 
 class FightingOrganizationRepo:
