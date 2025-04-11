@@ -1,6 +1,6 @@
 from sbtb.database.session import DbSession
 from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
-from sbtb.fighter.repository import FighterRepo, FightingOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo
+from sbtb.fighter.repository import FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo
 from sbtb.fighter.driver import ChromeDriver
 
 
@@ -17,8 +17,8 @@ async def get_boxer_repo(db: DbSession) -> FighterRepo:
     return FighterRepo(db=db)
 
 
-async def get_boxer_org_repo(db: DbSession) -> FightingOrganizationRepo:
-    return FightingOrganizationRepo(db=db)
+async def get_boxer_org_repo(db: DbSession) -> FightOrganizationRepo:
+    return FightOrganizationRepo(db=db)
 
 
 async def get_rank_repo(db: DbSession) -> RankRepo:

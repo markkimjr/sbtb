@@ -15,7 +15,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from sbtb.core.config import settings
 from sbtb.core.logging import logger
 from sbtb.core.http_requests import get_request
-from sbtb.fighter.schemas import WeightClassSchema, RawBoxerSchema
+from sbtb.fighter.schemas import WeightClassRead, RawBoxerSchema
 from sbtb.fighter.driver import ChromeDriver
 
 
@@ -80,7 +80,7 @@ class BoxingRankScraper(BaseScraper):
             if division != "heavyweight":
                 pounds = self.extract_pounds(pounds_str=pounds_str)
 
-            weight_class = WeightClassSchema(
+            weight_class = WeightClassRead(
                 name=division,
                 pounds=pounds
             )

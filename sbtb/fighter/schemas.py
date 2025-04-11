@@ -10,7 +10,7 @@ class RawBoxerSchema(BaseModel):
     is_champ: Optional[bool] = False
 
 
-class FighterSchema(BaseModel):
+class FighterRead(BaseModel):
     name: str
     nickname: Optional[str] = None
     age: Optional[int] = None
@@ -22,7 +22,7 @@ class FighterSchema(BaseModel):
         from_attributes = True
 
 
-class RankSchema(BaseModel):
+class RankRead(BaseModel):
     rank: float
     fighter_id: int
     weight_class_id: int
@@ -32,7 +32,7 @@ class RankSchema(BaseModel):
         from_attributes = True
 
 
-class WeightClassSchema(BaseModel):
+class WeightClassRead(BaseModel):
     name: str
     pounds: Optional[int] = None
     kilos: Optional[int] = None
@@ -43,17 +43,18 @@ class WeightClassSchema(BaseModel):
         from_attributes = True
 
 
-class FightingOrganizationSchema(BaseModel):
+class FightOrganizationRead(BaseModel):
     name: str
 
     class Config:
         from_attributes = True
 
 
-class FightCardSchema(BaseModel):
+class FightCardRead(BaseModel):
     event_name: str
     location: str
     event_date: datetime
+    fighters: List[FighterRead] = []
 
     class Config:
         from_attributes = True
