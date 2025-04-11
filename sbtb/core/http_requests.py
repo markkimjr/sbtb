@@ -1,9 +1,10 @@
-import logging
-import requests
 import traceback
-from typing import Union
+from typing import Union, Optional, Dict, Any
 
-logger = logging.getLogger(__name__)
+import requests
+import aiohttp
+
+from sbtb.core.logging import logger
 
 
 def get_request(url, params=None, headers=None, proxies=None, cookies=None, timeout=5, verify=True, max_retries=1,
@@ -54,3 +55,64 @@ def post_request(url, data=None, json=None, headers=None, proxies=None, cookies=
         traceback.print_exc()
         logger.error(f"ERROR POSTING REQUEST: {e}")
         return res
+
+
+async def async_get_request(
+    url: str,
+    params: Optional[Dict[str, Any]] = None,
+    headers: Optional[Dict[str, str]] = None,
+    cookies: Optional[Dict[str, str]] = None,
+    timeout: int = 5,
+    max_retries: int = 1,
+    return_json: bool = False,
+    return_res_text: bool = False,
+    allow_redirects: bool = True,
+    ssl: bool = True,
+) -> Union[Dict[str, Any], str, aiohttp.ClientResponse, None]:
+    for i in range(max_retries):
+        try:
+            timeout_obj = aiohttp.ClientTimeout(total=timeout)
+            async with aiohttp.ClientSession(headers=headers, cookies=cookies, timeout=timeout_obj) as session:
+                async with session.get(url, params=params, allow_redirects=allow_redirects, ssl=ssl) as res:
+                    if res.status == 200:
+                        if return_json:
+                            return await res.json()
+                        if return_res_text:
+                            return await res.text()
+                        return res
+                    logger.info(f"GET attempt {i+1}: {res.status} - {await res.text()}")
+        except Exception as e:
+            logger.error(f"GET attempt {i+1} failed: {e}")
+            traceback.print_exc()
+    return None
+
+
+async def async_post_request(
+    url: str,
+    data: Optional[Dict[str, Any]] = None,
+    json: Optional[Dict[str, Any]] = None,
+    headers: Optional[Dict[str, str]] = None,
+    cookies: Optional[Dict[str, str]] = None,
+    timeout: int = 5,
+    max_retries: int = 1,
+    return_json: bool = False,
+    return_res_text: bool = False,
+    allow_redirects: bool = True,
+    ssl: bool = True,
+) -> Union[Dict[str, Any], str, aiohttp.ClientResponse, None]:
+    for i in range(max_retries):
+        try:
+            timeout_obj = aiohttp.ClientTimeout(total=timeout)
+            async with aiohttp.ClientSession(headers=headers, cookies=cookies, timeout=timeout_obj) as session:
+                async with session.post(url, data=data, json=json, allow_redirects=allow_redirects, ssl=ssl) as res:
+                    if res.status in [200, 201]:
+                        if return_json:
+                            return await res.json()
+                        if return_res_text:
+                            return await res.text()
+                        return res
+                    logger.info(f"POST attempt {i+1}: {res.status} - {await res.text()}")
+        except Exception as e:
+            logger.error(f"POST attempt {i+1} failed: {e}")
+            traceback.print_exc()
+    return None
