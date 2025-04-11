@@ -26,7 +26,9 @@ async def fighter_root() -> Response:
             response_description="Update boxing ranks",
             response_model=List[RankRead],
             tags=["fighters"])
-async def scrape_and_save_boxing_ranks(service: BoxerScraperService = Depends(get_boxer_scraper_service)) -> Response:
+async def scrape_and_save_boxing_ranks(
+        service: BoxerScraperService = Depends(get_boxer_scraper_service)
+) -> List[RankRead]:
     updated_ranks: List[RankRead] = await service.scrape_and_update_boxing_ranks()
     return updated_ranks
 
@@ -35,8 +37,9 @@ async def scrape_and_save_boxing_ranks(service: BoxerScraperService = Depends(ge
             response_description="Update boxing fight cards",
             response_model=List[FightCardRead],
             tags=["fighters"])
-async def scrape_and_save_boxing_fight_cards(service: BoxingFightCardService = Depends(get_boxing_fight_card_service),
-                                             ) -> Response:
+async def scrape_and_save_boxing_fight_cards(
+        service: BoxingFightCardService = Depends(get_boxing_fight_card_service)
+) -> List[FightCardRead]:
     updated_fight_cards: List[FightCardDomain] = await service.scrape_and_update_boxing_fight_cards()
     fight_card_reads = [FightCardRead.model_validate(fc) for fc in updated_fight_cards]
     return fight_card_reads
