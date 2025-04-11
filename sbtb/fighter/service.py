@@ -16,8 +16,8 @@ class BoxerScraperService:
         self.scraper = scraper
         self.fighter_repo = fighter_repo
         self.organization_repo = organization_repo
-        self.rank_repo = rank_repo
         self.weight_class_repo = weight_class_repo
+        self.rank_repo = rank_repo
 
     async def scrape_and_update_boxing_ranks(self) -> List[RankRead]:
         try:
@@ -78,10 +78,9 @@ class BoxerScraperService:
 
 class BoxingFightCardService:
     def __init__(self, scraper: BoxingFightCardScraper, fighter_repo: FighterRepo,
-                 weight_class_repo: WeightClassRepo, fight_card_repo: FightCardRepo):
+                 fight_card_repo: FightCardRepo):
         self.scraper = scraper
         self.fighter_repo = fighter_repo
-        self.weight_class_repo = weight_class_repo
         self.fight_card_repo = fight_card_repo
 
     async def scrape_and_update_boxing_fight_cards(self) -> List[FightCardDomain]:

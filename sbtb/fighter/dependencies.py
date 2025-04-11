@@ -55,12 +55,10 @@ def get_boxer_scraper_service(
 def get_boxing_fight_card_service(
     scraper: BoxingFightCardScraper = Depends(get_boxing_fight_card_scraper),
     fighter_repo: FighterRepo = Depends(get_boxer_repo),
-    weight_class_repo: WeightClassRepo = Depends(get_weight_class_repo),
     fight_card_repo: FightCardRepo = Depends(get_fight_card_repo),
 ) -> BoxingFightCardService:
     return BoxingFightCardService(
         scraper=scraper,
         fighter_repo=fighter_repo,
-        weight_class_repo=weight_class_repo,
         fight_card_repo=fight_card_repo
     )
