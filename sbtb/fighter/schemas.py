@@ -24,12 +24,9 @@ class FighterRead(BaseModel):
 
 class RankRead(BaseModel):
     rank: float
-    fighter_id: int
-    weight_class_id: int
-    organization_id: int
-
-    class Config:
-        from_attributes = True
+    fighter_name: str
+    weight_class_name: str
+    organization_name: str
 
 
 class WeightClassRead(BaseModel):

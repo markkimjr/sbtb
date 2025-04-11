@@ -4,7 +4,7 @@ from typing import List, Dict, Optional, Any
 from sbtb.core.logging import logger
 from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
 from sbtb.fighter.repository import FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo
-from sbtb.fighter.schemas import RawBoxerSchema
+from sbtb.fighter.schemas import RawBoxerSchema, RankRead
 from sbtb.fighter.domain import FighterDomain, RankDomain, FightCardDomain, WeightClassDomain, \
     FightOrganizationDomain
 
@@ -19,7 +19,7 @@ class BoxerScraperService:
         self.rank_repo = rank_repo
         self.weight_class_repo = weight_class_repo
 
-    async def scrape_and_update_boxing_ranks(self) -> List[RankDomain]:
+    async def scrape_and_update_boxing_ranks(self) -> List[RankRead]:
         try:
             grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
             if not grouped_rankings:
@@ -28,6 +28,7 @@ class BoxerScraperService:
             organizations: List[FightOrganizationDomain] = await self.organization_repo.get_all()
             weight_classes: List[WeightClassDomain] = await self.weight_class_repo.get_all()
 
+            rank_reads = []
             ranks_to_upsert = []
             for raw_weight_class, raw_organizations in grouped_rankings.items():
                 for raw_organization, raw_boxers in raw_organizations.items():
@@ -58,10 +59,18 @@ class BoxerScraperService:
                         )
                         ranks_to_upsert.append(rank)
 
+                        rank_read = RankRead(
+                            rank=rank.rank,
+                            fighter_name=fighter.name,
+                            organization_name=organization.name,
+                            weight_class_name=weight_class.name,
+                        )
+                        rank_reads.append(rank_read)
+
             saved_ranks: List[RankDomain] = await self.rank_repo.bulk_upsert(ranks=ranks_to_upsert)
             logger.info(f"Updated {len(saved_ranks)} boxing rankings")
 
-            return ranks_to_upsert
+            return rank_reads
         except Exception as e:
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
             return []
