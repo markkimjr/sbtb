@@ -95,16 +95,16 @@ class BoxingFightCardService:
                 title_fighters = parsed_fight_card["title_fighters"]
                 undercard_fighters = parsed_fight_card["undercard_fighters"]
                 event_name = f"{title_fighters[0]} vs {title_fighters[1]}"
-                fight_card_data = FightCardDomain(
+                fight_card = FightCardDomain(
                     event_name=event_name,
                     event_date=parsed_fight_card["fight_date"],
                     location=parsed_fight_card["location"],
                 )
-                # save fight card data to database
-                saved_fight_card = await self.fight_card_repo.get_or_create(fight_card_domain=fight_card_data)
-                matched_fighter = []
+
+                fight_card = await self.fight_card_repo.get_or_create(fight_card_domain=fight_card)
 
                 # match fighters to fight_card
+                matched_fighters = []
                 for fighter_name in title_fighters + undercard_fighters:
                     fighter_name = fighter_name.lower()
                     raw_fighter = FighterDomain(name=fighter_name)
@@ -113,11 +113,11 @@ class BoxingFightCardService:
                         logger.error(f"Failed to save fighter: {raw_fighter.name}")
                         continue
 
-                    matched_fighter.append(fighter)
+                    matched_fighters.append(fighter)
 
-                saved_fight_card.fighters = matched_fighter
-                await self.fight_card_repo.save(fight_card_domain=saved_fight_card)
-                updated_fight_cards.append(saved_fight_card)
+                fight_card.set_fighters(fighters=matched_fighters)
+                await self.fight_card_repo.upsert(fight_card_domain=fight_card)
+                updated_fight_cards.append(fight_card)
 
             logger.info(f"Updated {len(parsed_fight_cards)} boxing fight cards")
             return updated_fight_cards

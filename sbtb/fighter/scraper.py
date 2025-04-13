@@ -45,7 +45,7 @@ class BoxingRankScraper(BaseScraper):
         raw_data = await self.request_data()
         if not raw_data:
             return None
-        return await self.parse(raw_data=raw_data)
+        return self.parse(raw_data=raw_data)
 
     async def request_data(self) -> Optional[str]:
         try:
@@ -57,7 +57,7 @@ class BoxingRankScraper(BaseScraper):
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
         return None
 
-    async def parse(self, raw_data: str) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
+    def parse(self, raw_data: str) -> Dict[str, Dict[str, List[RawBoxerSchema]]]:
         parsed_rankings = {}
         soup = self.load_soup(html_source=raw_data)
         wrapper_div = soup.find("div", {"class": "card card-wrapper bg-black text-white p-2.5 md:p-5"})
@@ -162,7 +162,7 @@ class BoxingFightCardScraper(BaseScraper):
         raw_data = await self.request_data()
         if not raw_data:
             return None
-        return await self.parse(raw_data=raw_data)
+        return self.parse(raw_data=raw_data)
 
     async def request_data(self) -> Optional[str]:
         try:
@@ -191,28 +191,30 @@ class BoxingFightCardScraper(BaseScraper):
 
             driver.execute_script("arguments[0].scrollIntoView(true);", load_more_button)
             load_more_button.click()
-
             time.sleep(2)
-            return driver.page_source
 
+            return driver.page_source
         except Exception as e:
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING SCHEDULE {traceback.format_exc()}")
 
         return None
 
-    async def parse(self, raw_data: str) -> List[Dict[str, Any]]:
+    def parse(self, raw_data: str) -> List[Dict[str, Any]]:
         soup = self.load_soup(html_source=raw_data)
-        main_div = soup.find("div", {"class": "grid grid-cols-1 lg:grid-cols-2 lg:items-stretch gap-2.5 lg:gap-5 *:bg-white px-2.5 lg:px-5"})
-        a_tags = main_div.find_all("a", recursive=False)
+        main_div = soup.find("div", {"class": "card card-wrapper bg-black text-white"})
+        main_sections = main_div.find_all("section")
 
         parsed_fight_cards = []
-        for fight_card_a_tag in a_tags:
-            parsed_fight_card = await self.parse_fight_card(fight_card_a_tag=fight_card_a_tag)
-            parsed_fight_cards.append(parsed_fight_card)
+        for section in main_sections:
+            main_div = section.find("div", recursive=False)
+            a_tags = main_div.find_all("a", recursive=False)
+            for fight_card_a_tag in a_tags:
+                parsed_fight_card = self.parse_fight_card(fight_card_a_tag=fight_card_a_tag)
+                parsed_fight_cards.append(parsed_fight_card)
 
         return parsed_fight_cards
 
-    async def parse_fight_card(self, fight_card_a_tag: bs4.element.Tag) -> Optional[Dict[str, Any]]:
+    def parse_fight_card(self, fight_card_a_tag: bs4.element.Tag) -> Optional[Dict[str, Any]]:
         fight_card = None
         try:
             fight_date_div = fight_card_a_tag.find("div", {"class": "bg-red text-white font-display font-bold text-xs md:text-sm uppercase px-2.5 md:px-4 py-1.5 md:py-2"})

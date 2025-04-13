@@ -10,6 +10,7 @@ from alembic import context
 
 from sbtb.core.config import settings
 from sbtb.fighter.models import *
+from sbtb.user.models import *
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

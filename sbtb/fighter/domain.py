@@ -38,6 +38,9 @@ class FightCardDomain(BaseModel):
     class Config:
         from_attributes = True
 
+    def set_fighters(self, fighters: List[FighterDomain]):
+        self.fighters = fighters
+
 
 class WeightClassDomain(BaseModel):
     id: Optional[int] = None
