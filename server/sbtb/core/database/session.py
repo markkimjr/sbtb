@@ -1,4 +1,4 @@
-from typing import AsyncGenerator, Annotated
+from typing import Annotated, AsyncGenerator
 from uuid import uuid4
 
 from fastapi import Depends

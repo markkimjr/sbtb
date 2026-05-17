@@ -1,10 +1,10 @@
-from .fight_organization import FightOrganization
-from .weight_class import WeightClass
-from .fight_card import FightCard
-from .fighter import Fighter
 from .bout import Bout
+from .fight_card import FightCard
+from .fight_organization import FightOrganization
+from .fighter import Fighter
 from .rank import Rank
 from .user import User
+from .weight_class import WeightClass
 
 __all__ = [
     "FightOrganization",

@@ -1,5 +1,5 @@
 from collections.abc import AsyncGenerator
-from typing import Generic, Any, Sequence, Self, TypeVar
+from typing import Any, Generic, Self, Sequence, TypeVar
 
 from sqlalchemy import (
     Select,
@@ -36,9 +36,7 @@ class BaseRepository(Generic[M]):
         async for result in results.unique().scalars():
             yield result
 
-    async def paginate(
-        self, statement: Select[tuple[M]], *, limit: int, page: int
-    ) -> tuple[list[M], int]:
+    async def paginate(self, statement: Select[tuple[M]], *, limit: int, page: int) -> tuple[list[M], int]:
         offset = (page - 1) * limit
         paginated_statement: Select[tuple[M, int]] = (
             statement.add_columns(over(func.count())).limit(limit).offset(offset)

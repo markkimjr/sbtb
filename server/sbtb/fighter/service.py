@@ -1,13 +1,14 @@
 import traceback
+from typing import Any, Dict, List, Optional
+
 import structlog
-from typing import List, Dict, Optional, Any
 
 from sbtb.core.database.session import DbSession
-from sbtb.models import Fighter, FightCard
-from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
 from sbtb.fighter.driver import ChromeDriver
-from sbtb.fighter.repository import FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo
-from sbtb.fighter.schemas import RawBoxerSchema, RankInput, BoutInput, RankRead
+from sbtb.fighter.repository import FightCardRepo, FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo
+from sbtb.fighter.schemas import BoutInput, RankInput, RankRead, RawBoxerSchema
+from sbtb.fighter.scraper import BoxingFightCardScraper, BoxingRankScraper
+from sbtb.models import FightCard, Fighter
 
 logger = structlog.get_logger(__name__)
 
@@ -50,18 +51,22 @@ class BoxerScraperService:
                             logger.error(f"Weight class not found: {raw_weight_class}")
                             continue
 
-                        ranks_to_upsert.append(RankInput(
-                            rank=raw_boxer.rank,
-                            fighter_id=fighter.id,
-                            weight_class_id=weight_class.id,
-                            organization_id=organization.id,
-                        ))
-                        rank_reads.append(RankRead(
-                            rank=raw_boxer.rank,
-                            fighter_name=fighter.name,
-                            organization_name=organization.name,
-                            weight_class_name=weight_class.name,
-                        ))
+                        ranks_to_upsert.append(
+                            RankInput(
+                                rank=raw_boxer.rank,
+                                fighter_id=fighter.id,
+                                weight_class_id=weight_class.id,
+                                organization_id=organization.id,
+                            )
+                        )
+                        rank_reads.append(
+                            RankRead(
+                                rank=raw_boxer.rank,
+                                fighter_name=fighter.name,
+                                organization_name=organization.name,
+                                weight_class_name=weight_class.name,
+                            )
+                        )
 
             saved_ranks = await rank_repo.bulk_upsert(ranks=ranks_to_upsert)
             logger.info(f"Updated {len(saved_ranks)} boxing rankings")
@@ -93,12 +98,14 @@ class BoxingFightCardService:
             red_corner = await self._get_or_create_fighter(fighter_repo, title_fighters[0])
             blue_corner = await self._get_or_create_fighter(fighter_repo, title_fighters[1])
             if red_corner and blue_corner:
-                bouts.append(BoutInput(
-                    red_corner_id=red_corner.id,
-                    blue_corner_id=blue_corner.id,
-                    is_title_fight=True,
-                    bout_order=1,
-                ))
+                bouts.append(
+                    BoutInput(
+                        red_corner_id=red_corner.id,
+                        blue_corner_id=blue_corner.id,
+                        is_title_fight=True,
+                        bout_order=1,
+                    )
+                )
 
         # Undercard bouts — flat list, paired as (red, blue)
         undercard_pairs = list(zip(undercard_fighters[::2], undercard_fighters[1::2]))
@@ -106,12 +113,14 @@ class BoxingFightCardService:
             red_corner = await self._get_or_create_fighter(fighter_repo, red_name)
             blue_corner = await self._get_or_create_fighter(fighter_repo, blue_name)
             if red_corner and blue_corner:
-                bouts.append(BoutInput(
-                    red_corner_id=red_corner.id,
-                    blue_corner_id=blue_corner.id,
-                    is_title_fight=False,
-                    bout_order=i + 2,
-                ))
+                bouts.append(
+                    BoutInput(
+                        red_corner_id=red_corner.id,
+                        blue_corner_id=blue_corner.id,
+                        is_title_fight=False,
+                        bout_order=i + 2,
+                    )
+                )
 
         return bouts
 

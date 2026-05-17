@@ -1,9 +1,10 @@
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Boolean
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import Boolean, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sbtb.core.database.base import RecordModel
+from sbtb.models import FightCard, Fighter
 
 
 class Bout(RecordModel):

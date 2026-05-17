@@ -1,17 +1,15 @@
 import asyncio
 from logging.config import fileConfig
 
+from alembic import context
 from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-from alembic import context
-
-from sbtb.core.config import settings
-from sbtb.core.database.base import BaseModel
-
 # Import all models so alembic autogenerate sees them
 import sbtb.models  # noqa: F401
+from sbtb.core.config import settings
+from sbtb.core.database.base import BaseModel
 
 config = context.config
 config.set_main_option("sqlalchemy.url", str(settings.POSTGRES_DATABASE_SESSION_URL))

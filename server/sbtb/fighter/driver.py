@@ -1,9 +1,8 @@
+import structlog
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-
-import structlog
 
 logger = structlog.get_logger(__name__)
 
@@ -32,7 +31,7 @@ class ChromeDriver:
         return options
 
     def get_driver(self) -> webdriver.Chrome:
-        logger.info(f"------------------- Loading chrome driver ------------------")
+        logger.info("------------------- Loading chrome driver ------------------")
         driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=self._get_options())
         driver.execute_cdp_cmd(
             "Page.addScriptToEvaluateOnNewDocument",

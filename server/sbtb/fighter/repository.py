@@ -1,22 +1,20 @@
 from datetime import datetime
 from typing import Sequence
 
-from sqlalchemy import select, delete
+from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import func
 
 from sbtb.core.repository.base import BaseRepository
-from sbtb.models import Fighter, Rank, FightOrganization, WeightClass, FightCard, Bout
-from sbtb.fighter.schemas import RankInput, BoutInput
+from sbtb.fighter.schemas import BoutInput, RankInput
+from sbtb.models import Bout, FightCard, Fighter, FightOrganization, Rank, WeightClass
 
 
 class FighterRepo(BaseRepository[Fighter]):
     model = Fighter
 
     async def get_by_name(self, name: str) -> Fighter | None:
-        return await self.get_one_or_none(
-            self.get_base_statement().where(Fighter.name == name)
-        )
+        return await self.get_one_or_none(self.get_base_statement().where(Fighter.name == name))
 
     async def get_all(self) -> Sequence[Fighter]:
         return await super().get_all(self.get_base_statement())
@@ -53,8 +51,7 @@ class RankRepo(BaseRepository[Rank]):
             "updated_at": func.now(),
         }
         stmt = stmt.on_conflict_do_update(
-            index_elements=["rank", "weight_class_id", "organization_id"],
-            set_=update_columns
+            index_elements=["rank", "weight_class_id", "organization_id"], set_=update_columns
         ).returning(Rank)
 
         result = await self.session.execute(stmt)
@@ -86,9 +83,7 @@ class FightCardRepo(BaseRepository[FightCard]):
         location: str | None = None,
         network: str | None = None,
     ) -> FightCard:
-        card = await self.get_one_or_none(
-            self.get_base_statement().where(FightCard.event_name == event_name)
-        )
+        card = await self.get_one_or_none(self.get_base_statement().where(FightCard.event_name == event_name))
         if not card:
             card = FightCard(
                 event_name=event_name,
@@ -100,21 +95,19 @@ class FightCardRepo(BaseRepository[FightCard]):
         return card
 
     async def upsert_bouts(self, fight_card: FightCard, bouts: list[BoutInput]) -> FightCard:
-        await self.session.execute(
-            delete(Bout).where(Bout.fight_card_id == fight_card.id)
-        )
+        await self.session.execute(delete(Bout).where(Bout.fight_card_id == fight_card.id))
         for bout_input in bouts:
-            await self.create(Bout(
-                fight_card_id=fight_card.id,
-                red_corner_id=bout_input.red_corner_id,
-                blue_corner_id=bout_input.blue_corner_id,
-                bout_order=bout_input.bout_order,
-                is_title_fight=bout_input.is_title_fight,
-            ))
+            await self.create(
+                Bout(
+                    fight_card_id=fight_card.id,
+                    red_corner_id=bout_input.red_corner_id,
+                    blue_corner_id=bout_input.blue_corner_id,
+                    bout_order=bout_input.bout_order,
+                    is_title_fight=bout_input.is_title_fight,
+                )
+            )
 
         await self.session.flush()
 
         # Re-query to get the card with freshly loaded bouts
-        return await self.get_one_or_none(
-            self.get_base_statement().where(FightCard.id == fight_card.id)
-        )
+        return await self.get_one_or_none(self.get_base_statement().where(FightCard.id == fight_card.id))

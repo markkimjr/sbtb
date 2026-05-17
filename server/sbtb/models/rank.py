@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import ForeignKey, Double
+from sqlalchemy import Double, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.schema import UniqueConstraint
 
@@ -15,6 +15,4 @@ class Rank(RecordModel):
     weight_class_id: Mapped[UUID] = mapped_column(ForeignKey("weight_classes.id"), nullable=False)
     organization_id: Mapped[UUID] = mapped_column(ForeignKey("fight_organizations.id"), nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("rank", "weight_class_id", "organization_id"),
-    )
+    __table_args__ = (UniqueConstraint("rank", "weight_class_id", "organization_id"),)

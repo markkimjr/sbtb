@@ -1,5 +1,5 @@
 from fastapi import APIRouter, status
-from fastapi.responses import PlainTextResponse, JSONResponse, Response
+from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from .fighter.routes import router as fighter_router
 

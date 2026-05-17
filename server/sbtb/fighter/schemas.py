@@ -1,13 +1,12 @@
 from datetime import datetime
 from typing import List
-from uuid import UUID
 
-from pydantic import BaseModel, UUID4, ConfigDict
+from pydantic import UUID4, BaseModel
 
 from sbtb.core.schemas import BaseSchema, IDSchema
 
-
 # --- Internal DTOs (not for API responses) ---
+
 
 class RawBoxerSchema(BaseModel):
     name: str
@@ -31,6 +30,7 @@ class BoutInput(BaseSchema):
 
 
 # --- API Response Schemas ---
+
 
 class FighterRead(IDSchema):
     name: str

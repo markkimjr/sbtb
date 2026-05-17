@@ -1,16 +1,14 @@
-import structlog
-
 from collections.abc import Sequence
 from typing import Any, Literal, LiteralString, NotRequired, TypedDict
 
-from fastapi import Request, FastAPI
+import structlog
+from fastapi import FastAPI, Request
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field, create_model
 from pydantic_core import ErrorDetails, InitErrorDetails, PydanticCustomError
 from pydantic_core import ValidationError as PydanticValidationError
-
 
 logger = structlog.get_logger(__name__)
 
@@ -130,15 +128,11 @@ class SBTBRequestValidationError(SBTBError):
                     "input": error["input"],
                 }
             )
-        pydantic_error = PydanticValidationError.from_exception_data(
-            self.__class__.__name__, pydantic_errors
-        )
+        pydantic_error = PydanticValidationError.from_exception_data(self.__class__.__name__, pydantic_errors)
         return pydantic_error.errors()
 
 
-async def sbtb_exception_handler(
-    request: Request, exc: SBTBError
-) -> JSONResponse:
+async def sbtb_exception_handler(request: Request, exc: SBTBError) -> JSONResponse:
     logger.error("exception occurred", message=exc.message, exc_info=exc)
     return JSONResponse(
         status_code=exc.status_code,
@@ -159,9 +153,7 @@ async def request_validation_exception_handler(
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.error("Unhandled exception occurred", exc_info=exc)
-    return await sbtb_exception_handler(
-        request, InternalServerError(message=str(exc))
-    )
+    return await sbtb_exception_handler(request, InternalServerError(message=str(exc)))
 
 
 def add_exception_handlers(app: FastAPI) -> None:

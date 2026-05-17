@@ -1,9 +1,10 @@
 from datetime import datetime
 
-from sqlalchemy import String, TIMESTAMP
-from sqlalchemy.orm import relationship, Mapped, mapped_column
+from sqlalchemy import TIMESTAMP, String
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sbtb.core.database.base import RecordModel
+from sbtb.models.bout import Bout
 
 
 class FightCard(RecordModel):
