@@ -88,7 +88,6 @@ class BoxingFightCardService:
     async def _build_bouts(
         self,
         fighter_repo: FighterRepo,
-        fight_card: FightCard,
         title_fighters: list[str],
         undercard_fighters: list[str],
     ) -> list[BoutInput]:
@@ -150,7 +149,6 @@ class BoxingFightCardService:
 
                 bouts = await self._build_bouts(
                     fighter_repo=fighter_repo,
-                    fight_card=fight_card,
                     title_fighters=title_fighters,
                     undercard_fighters=undercard_fighters,
                 )
