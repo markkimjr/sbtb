@@ -44,7 +44,6 @@ def create_app() -> FastAPI:
     app = FastAPI(
         title="Saved By The Bell",
         description="Boxing fight notification service",
-        version=settings.VERSION,
         lifespan=lifespan,
     )
 

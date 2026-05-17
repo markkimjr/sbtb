@@ -29,9 +29,7 @@ else:
 class Settings(BaseSettings):
     ENV: Environment = Environment.local
 
-    LOG_LEVEL: str = "INFO"
-
-    VERSION: str = "v1"
+    LOG_LEVEL: int = 20
 
     DEBUG: bool = True
 
@@ -60,6 +58,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=_env_file,
         env_file_encoding="utf-8",
+        extra="allow",
     )
 
     @classmethod

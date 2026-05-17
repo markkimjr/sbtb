@@ -1,10 +1,13 @@
+from typing import TYPE_CHECKING
 from uuid import UUID
 
 from sqlalchemy import Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sbtb.core.database.base import RecordModel
-from sbtb.models import FightCard, Fighter
+
+if TYPE_CHECKING:
+    from sbtb.models import FightCard, Fighter
 
 
 class Bout(RecordModel):
