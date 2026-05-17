@@ -1,12 +1,8 @@
-import traceback
-from typing import Any, Dict, List, Optional
-
 import structlog
 
 from sbtb.core.database.session import DbSession
-from sbtb.fighter.driver import ChromeDriver
 from sbtb.fighter.repository import FightCardRepo, FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo
-from sbtb.fighter.schemas import BoutInput, RankInput, RankRead, RawBoxerSchema
+from sbtb.fighter.schemas import BoutInput, ParsedFightCard, RankInput, RankRead
 from sbtb.fighter.scraper import BoxingFightCardScraper, BoxingRankScraper
 from sbtb.models import FightCard, Fighter
 
@@ -17,9 +13,9 @@ class BoxerScraperService:
     def __init__(self, scraper: BoxingRankScraper):
         self.scraper = scraper
 
-    async def scrape_and_update_boxing_ranks(self, session: DbSession) -> List[RankRead]:
+    async def scrape_and_update_boxing_ranks(self, session: DbSession) -> list[RankRead]:
         try:
-            grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
+            grouped_rankings = await self.scraper.run_scraper()
             if not grouped_rankings:
                 return []
 
@@ -41,7 +37,10 @@ class BoxerScraperService:
                             logger.error(f"Failed to save fighter: {raw_boxer.name}")
                             continue
 
-                        organization = next((org for org in organizations if org.name == raw_organization), None)
+                        organization = next(
+                            (org for org in organizations if org.name == raw_organization),
+                            None,
+                        )
                         if organization is None:
                             logger.error(f"Organization not found: {raw_organization}")
                             continue
@@ -53,7 +52,8 @@ class BoxerScraperService:
 
                         ranks_to_upsert.append(
                             RankInput(
-                                rank=raw_boxer.rank,
+                                rank_type=raw_boxer.rank_type,
+                                position=raw_boxer.position,
                                 fighter_id=fighter.id,
                                 weight_class_id=weight_class.id,
                                 organization_id=organization.id,
@@ -61,7 +61,8 @@ class BoxerScraperService:
                         )
                         rank_reads.append(
                             RankRead(
-                                rank=raw_boxer.rank,
+                                rank_type=raw_boxer.rank_type,
+                                position=raw_boxer.position,
                                 fighter_name=fighter.name,
                                 organization_name=organization.name,
                                 weight_class_name=weight_class.name,
@@ -73,12 +74,12 @@ class BoxerScraperService:
             return rank_reads
 
         except Exception:
-            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
+            logger.exception("ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS")
             return []
 
 
 class BoxingFightCardService:
-    async def _get_or_create_fighter(self, fighter_repo: FighterRepo, name: str) -> Optional[Fighter]:
+    async def _get_or_create_fighter(self, fighter_repo: FighterRepo, name: str) -> Fighter | None:
         fighter = await fighter_repo.get_or_create(name=name.lower())
         if fighter is None:
             logger.error(f"Failed to save fighter: {name}")
@@ -88,8 +89,8 @@ class BoxingFightCardService:
         self,
         fighter_repo: FighterRepo,
         fight_card: FightCard,
-        title_fighters: List[str],
-        undercard_fighters: List[str],
+        title_fighters: list[str],
+        undercard_fighters: list[str],
     ) -> list[BoutInput]:
         bouts = []
 
@@ -124,26 +125,27 @@ class BoxingFightCardService:
 
         return bouts
 
-    async def scrape_and_update_boxing_fight_cards(self, session: DbSession) -> List[FightCard]:
+    async def scrape_and_update_boxing_fight_cards(self, session: DbSession) -> list[FightCard]:
         try:
-            scraper = BoxingFightCardScraper(driver=ChromeDriver())
+            scraper = BoxingFightCardScraper()
             fighter_repo = FighterRepo.from_session(session)
             fight_card_repo = FightCardRepo.from_session(session)
 
             updated_fight_cards = []
-            parsed_fight_cards: Optional[List[Dict[str, Any]]] = await scraper.run_scraper()
+            parsed_fight_cards: list[ParsedFightCard] | None = await scraper.run_scraper()
             if not parsed_fight_cards:
                 return []
 
             for i, parsed_fight_card in enumerate(parsed_fight_cards):
                 logger.info(f"Updating fight card {i + 1}/{len(parsed_fight_cards)}")
-                title_fighters = parsed_fight_card["title_fighters"]
-                undercard_fighters = parsed_fight_card["undercard_fighters"]
+                title_fighters = parsed_fight_card.title_fighters
+                undercard_fighters = parsed_fight_card.undercard_fighters
 
                 fight_card = await fight_card_repo.get_or_create(
                     event_name=f"{title_fighters[0]} vs {title_fighters[1]}",
-                    event_date=parsed_fight_card["fight_date"],
-                    location=parsed_fight_card["location"],
+                    event_date=parsed_fight_card.fight_date,
+                    location=parsed_fight_card.location,
+                    network=parsed_fight_card.network,
                 )
 
                 bouts = await self._build_bouts(
@@ -163,7 +165,7 @@ class BoxingFightCardService:
             return updated_fight_cards
 
         except Exception:
-            logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING FIGHT CARDS {traceback.format_exc()}")
+            logger.exception("ERROR OCCURRED WHILE SCRAPING BOXING FIGHT CARDS")
             return []
 
 

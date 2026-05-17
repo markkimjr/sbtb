@@ -169,13 +169,24 @@ result = fighter_repo.get_or_create(fighter_name)
 ```
 
 ### Type Hints
-Always annotate function signatures and variables where the type isn't immediately obvious:
+Always use **modern Python 3.10+ type hint syntax**. Never use `typing.Optional`, `typing.List`, `typing.Dict`, or `typing.Tuple` — use native types and `|` union syntax instead:
+
 ```python
-from typing import List, Optional
+# Good — native types
+async def get_fighters(session: DbSession, limit: int | None = None) -> list[Fighter]:
+    ...
+
+def get_map() -> dict[str, list[int]]:
+    ...
+
+# Avoid — legacy typing imports
+from typing import List, Dict, Optional
 
 async def get_fighters(session: DbSession, limit: Optional[int] = None) -> List[Fighter]:
     ...
 ```
+
+Only import from `typing` for things unavailable natively: `Any`, `Generic`, `TypeVar`, `Self`, `Annotated`, `TYPE_CHECKING`, `Literal`, etc.
 
 ### String Quotations
 Use double quotes:
@@ -191,7 +202,7 @@ message = 'Hello, world'
 ### Docstrings
 Use Google-style docstrings for non-trivial functions:
 ```python
-async def scrape_and_update_boxing_ranks(self, session: DbSession) -> List[RankRead]:
+async def scrape_and_update_boxing_ranks(self, session: DbSession) -> list[RankRead]:
     """Scrape current boxing rankings and upsert into the database.
 
     Args:
@@ -209,6 +220,24 @@ import structlog
 
 logger = structlog.get_logger(__name__)
 ```
+
+In `except` blocks, use `logger.exception()` instead of `logger.error()`. It automatically captures the current exception and traceback — no need for `traceback.format_exc()`:
+
+```python
+# Good
+try:
+    ...
+except Exception:
+    logger.exception("Failed to fetch data")
+
+# Avoid
+try:
+    ...
+except Exception:
+    logger.error(f"Failed to fetch data: {traceback.format_exc()}")
+```
+
+Use `logger.error()` only for non-exception error conditions (e.g. missing data, validation failures outside of except blocks).
 
 ### No Commits in Service Code
 Never call `session.commit()` in service or repository methods. Use `session.flush()` for mid-transaction visibility. The request lifecycle in `session.py` owns the commit.

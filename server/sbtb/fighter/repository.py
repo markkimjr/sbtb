@@ -3,7 +3,6 @@ from typing import Sequence
 
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
-from sqlalchemy.sql import func
 
 from sbtb.core.repository.base import BaseRepository
 from sbtb.fighter.schemas import BoutInput, RankInput
@@ -43,17 +42,11 @@ class RankRepo(BaseRepository[Rank]):
         if not ranks:
             return []
 
-        rank_dicts = [r.model_dump(exclude_unset=True) for r in ranks]
+        # Full refresh: scraper fetches all rankings each run, so delete and re-insert
+        await self.session.execute(delete(Rank))
 
-        stmt = pg_insert(Rank).values(rank_dicts)
-        update_columns = {
-            "fighter_id": stmt.excluded.fighter_id,
-            "updated_at": func.now(),
-        }
-        stmt = stmt.on_conflict_do_update(
-            index_elements=["rank", "weight_class_id", "organization_id"], set_=update_columns
-        ).returning(Rank)
-
+        rank_dicts = [r.model_dump(exclude={"id"}) for r in ranks]
+        stmt = pg_insert(Rank).values(rank_dicts).returning(Rank)
         result = await self.session.execute(stmt)
         return result.scalars().all()
 
@@ -83,7 +76,12 @@ class FightCardRepo(BaseRepository[FightCard]):
         location: str | None = None,
         network: str | None = None,
     ) -> FightCard:
-        card = await self.get_one_or_none(self.get_base_statement().where(FightCard.event_name == event_name))
+        card = await self.get_one_or_none(
+            self.get_base_statement().where(
+                FightCard.event_name == event_name,
+                FightCard.event_date == event_date,
+            )
+        )
         if not card:
             card = FightCard(
                 event_name=event_name,

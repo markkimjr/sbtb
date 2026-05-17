@@ -1,22 +1,31 @@
-from datetime import datetime
-from typing import List
+import datetime
 
 from pydantic import UUID4, BaseModel
 
 from sbtb.core.schemas import BaseSchema, IDSchema
+from sbtb.models.rank import RankType
 
 # --- Internal DTOs (not for API responses) ---
 
 
 class RawBoxerSchema(BaseModel):
     name: str
-    rank: float
-    is_champ: bool = False
+    rank_type: RankType
+    position: int | None = None  # 1–15 for contenders, None for champion types
+
+
+class ParsedFightCard(BaseModel):
+    fight_date: datetime.datetime
+    title_fighters: list[str]
+    undercard_fighters: list[str]
+    location: str
+    network: str | None = None
 
 
 class RankInput(BaseSchema):
     id: UUID4 | None = None
-    rank: float
+    rank_type: RankType
+    position: int | None = None
     fighter_id: UUID4
     weight_class_id: UUID4
     organization_id: UUID4
@@ -44,9 +53,6 @@ class FighterRead(IDSchema):
 class WeightClassRead(IDSchema):
     name: str
     pounds: int | None = None
-    kilos: int | None = None
-    upper_limit: int | None = None
-    lower_limit: int | None = None
 
 
 class FightOrganizationRead(IDSchema):
@@ -54,7 +60,8 @@ class FightOrganizationRead(IDSchema):
 
 
 class RankRead(BaseSchema):
-    rank: float
+    rank_type: RankType
+    position: int | None
     fighter_name: str
     weight_class_name: str
     organization_name: str
@@ -70,5 +77,5 @@ class BoutRead(IDSchema):
 class FightCardRead(IDSchema):
     event_name: str | None = None
     location: str | None = None
-    event_date: datetime
-    bouts: List[BoutRead] = []
+    event_date: datetime.datetime
+    bouts: list[BoutRead] = []
