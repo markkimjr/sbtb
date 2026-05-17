@@ -77,6 +77,20 @@ uv run ruff check --fix .    # Lint and auto-fix
 uv run ruff format .         # Format
 ```
 
+### Pre-commit Hooks
+
+Install hooks after cloning:
+
+```bash
+uv run pre-commit install
+```
+
+The following checks run automatically on every `git commit`:
+- **ruff** — lints staged Python files, blocks commit on errors
+- **ruff-format** — formats staged Python files in place (re-stage and recommit if changed)
+- **uv-lock** — validates `uv.lock` is up to date
+- **uv-export** — regenerates `requirements.txt` when `pyproject.toml` or `uv.lock` changes
+
 ## Project Structure
 
 ```
