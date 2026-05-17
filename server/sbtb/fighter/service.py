@@ -1,44 +1,43 @@
 import traceback
+import structlog
 from typing import List, Dict, Optional, Any
 
-from sbtb.core.logging import logger
+from sbtb.core.database.session import DbSession
+from sbtb.models import Fighter, FightCard
 from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
+from sbtb.fighter.driver import ChromeDriver
 from sbtb.fighter.repository import FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo
-from sbtb.fighter.schemas import RawBoxerSchema, RankRead
-from sbtb.fighter.domain import FighterDomain, RankDomain, FightCardDomain, WeightClassDomain, \
-    FightOrganizationDomain
+from sbtb.fighter.schemas import RawBoxerSchema, RankInput, BoutInput, RankRead
+
+logger = structlog.get_logger(__name__)
 
 
 class BoxerScraperService:
-    def __init__(self, scraper: BoxingRankScraper, fighter_repo: FighterRepo,
-                 organization_repo: FightOrganizationRepo,
-                 rank_repo: RankRepo, weight_class_repo: WeightClassRepo):
+    def __init__(self, scraper: BoxingRankScraper):
         self.scraper = scraper
-        self.fighter_repo = fighter_repo
-        self.organization_repo = organization_repo
-        self.weight_class_repo = weight_class_repo
-        self.rank_repo = rank_repo
 
-    async def scrape_and_update_boxing_ranks(self) -> List[RankRead]:
+    async def scrape_and_update_boxing_ranks(self, session: DbSession) -> List[RankRead]:
         try:
             grouped_rankings: Dict[str, Dict[str, List[RawBoxerSchema]]] = await self.scraper.run_scraper()
             if not grouped_rankings:
                 return []
 
-            organizations: List[FightOrganizationDomain] = await self.organization_repo.get_all()
-            weight_classes: List[WeightClassDomain] = await self.weight_class_repo.get_all()
+            fighter_repo = FighterRepo.from_session(session)
+            organization_repo = FightOrganizationRepo.from_session(session)
+            weight_class_repo = WeightClassRepo.from_session(session)
+            rank_repo = RankRepo.from_session(session)
+
+            organizations = await organization_repo.get_all()
+            weight_classes = await weight_class_repo.get_all()
 
             rank_reads = []
             ranks_to_upsert = []
             for raw_weight_class, raw_organizations in grouped_rankings.items():
                 for raw_organization, raw_boxers in raw_organizations.items():
-                    for i, raw_boxer in enumerate(raw_boxers):
-                        raw_fighter = FighterDomain(
-                            name=raw_boxer.name
-                        )
-                        fighter = await self.fighter_repo.get_or_create(raw_fighter=raw_fighter)
+                    for raw_boxer in raw_boxers:
+                        fighter = await fighter_repo.get_or_create(name=raw_boxer.name)
                         if fighter is None:
-                            logger.error(f"Failed to save fighter: {raw_fighter.name}")
+                            logger.error(f"Failed to save fighter: {raw_boxer.name}")
                             continue
 
                         organization = next((org for org in organizations if org.name == raw_organization), None)
@@ -51,42 +50,79 @@ class BoxerScraperService:
                             logger.error(f"Weight class not found: {raw_weight_class}")
                             continue
 
-                        rank = RankDomain(
+                        ranks_to_upsert.append(RankInput(
                             rank=raw_boxer.rank,
                             fighter_id=fighter.id,
                             weight_class_id=weight_class.id,
-                            organization_id=organization.id
-                        )
-                        ranks_to_upsert.append(rank)
-
-                        rank_read = RankRead(
-                            rank=rank.rank,
+                            organization_id=organization.id,
+                        ))
+                        rank_reads.append(RankRead(
+                            rank=raw_boxer.rank,
                             fighter_name=fighter.name,
                             organization_name=organization.name,
                             weight_class_name=weight_class.name,
-                        )
-                        rank_reads.append(rank_read)
+                        ))
 
-            saved_ranks: List[RankDomain] = await self.rank_repo.bulk_upsert(ranks=ranks_to_upsert)
+            saved_ranks = await rank_repo.bulk_upsert(ranks=ranks_to_upsert)
             logger.info(f"Updated {len(saved_ranks)} boxing rankings")
-
             return rank_reads
-        except Exception as e:
+
+        except Exception:
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
             return []
 
 
 class BoxingFightCardService:
-    def __init__(self, scraper: BoxingFightCardScraper, fighter_repo: FighterRepo,
-                 fight_card_repo: FightCardRepo):
-        self.scraper = scraper
-        self.fighter_repo = fighter_repo
-        self.fight_card_repo = fight_card_repo
+    async def _get_or_create_fighter(self, fighter_repo: FighterRepo, name: str) -> Optional[Fighter]:
+        fighter = await fighter_repo.get_or_create(name=name.lower())
+        if fighter is None:
+            logger.error(f"Failed to save fighter: {name}")
+        return fighter
 
-    async def scrape_and_update_boxing_fight_cards(self) -> List[FightCardDomain]:
+    async def _build_bouts(
+        self,
+        fighter_repo: FighterRepo,
+        fight_card: FightCard,
+        title_fighters: List[str],
+        undercard_fighters: List[str],
+    ) -> list[BoutInput]:
+        bouts = []
+
+        # Title bout
+        if len(title_fighters) == 2:
+            red_corner = await self._get_or_create_fighter(fighter_repo, title_fighters[0])
+            blue_corner = await self._get_or_create_fighter(fighter_repo, title_fighters[1])
+            if red_corner and blue_corner:
+                bouts.append(BoutInput(
+                    red_corner_id=red_corner.id,
+                    blue_corner_id=blue_corner.id,
+                    is_title_fight=True,
+                    bout_order=1,
+                ))
+
+        # Undercard bouts — flat list, paired as (red, blue)
+        undercard_pairs = list(zip(undercard_fighters[::2], undercard_fighters[1::2]))
+        for i, (red_name, blue_name) in enumerate(undercard_pairs):
+            red_corner = await self._get_or_create_fighter(fighter_repo, red_name)
+            blue_corner = await self._get_or_create_fighter(fighter_repo, blue_name)
+            if red_corner and blue_corner:
+                bouts.append(BoutInput(
+                    red_corner_id=red_corner.id,
+                    blue_corner_id=blue_corner.id,
+                    is_title_fight=False,
+                    bout_order=i + 2,
+                ))
+
+        return bouts
+
+    async def scrape_and_update_boxing_fight_cards(self, session: DbSession) -> List[FightCard]:
         try:
+            scraper = BoxingFightCardScraper(driver=ChromeDriver())
+            fighter_repo = FighterRepo.from_session(session)
+            fight_card_repo = FightCardRepo.from_session(session)
+
             updated_fight_cards = []
-            parsed_fight_cards: Optional[List[Dict[str, Any]]] = await self.scraper.run_scraper()
+            parsed_fight_cards: Optional[List[Dict[str, Any]]] = await scraper.run_scraper()
             if not parsed_fight_cards:
                 return []
 
@@ -94,34 +130,33 @@ class BoxingFightCardService:
                 logger.info(f"Updating fight card {i + 1}/{len(parsed_fight_cards)}")
                 title_fighters = parsed_fight_card["title_fighters"]
                 undercard_fighters = parsed_fight_card["undercard_fighters"]
-                event_name = f"{title_fighters[0]} vs {title_fighters[1]}"
-                fight_card = FightCardDomain(
-                    event_name=event_name,
+
+                fight_card = await fight_card_repo.get_or_create(
+                    event_name=f"{title_fighters[0]} vs {title_fighters[1]}",
                     event_date=parsed_fight_card["fight_date"],
                     location=parsed_fight_card["location"],
                 )
 
-                fight_card = await self.fight_card_repo.get_or_create(fight_card_domain=fight_card)
+                bouts = await self._build_bouts(
+                    fighter_repo=fighter_repo,
+                    fight_card=fight_card,
+                    title_fighters=title_fighters,
+                    undercard_fighters=undercard_fighters,
+                )
 
-                # match fighters to fight_card
-                matched_fighters = []
-                for fighter_name in title_fighters + undercard_fighters:
-                    fighter_name = fighter_name.lower()
-                    raw_fighter = FighterDomain(name=fighter_name)
-                    fighter = await self.fighter_repo.get_or_create(raw_fighter=raw_fighter)
-                    if fighter is None:
-                        logger.error(f"Failed to save fighter: {raw_fighter.name}")
-                        continue
-
-                    matched_fighters.append(fighter)
-
-                fight_card.set_fighters(fighters=matched_fighters)
-                await self.fight_card_repo.upsert(fight_card_domain=fight_card)
+                fight_card = await fight_card_repo.upsert_bouts(
+                    fight_card=fight_card,
+                    bouts=bouts,
+                )
                 updated_fight_cards.append(fight_card)
 
             logger.info(f"Updated {len(parsed_fight_cards)} boxing fight cards")
             return updated_fight_cards
 
-        except Exception as e:
+        except Exception:
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING FIGHT CARDS {traceback.format_exc()}")
             return []
+
+
+boxer_scraper_service = BoxerScraperService(scraper=BoxingRankScraper())
+boxing_fight_card_service = BoxingFightCardService()

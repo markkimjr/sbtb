@@ -3,7 +3,9 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 
-from sbtb.core.logging import logger
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 
 class ChromeDriver:

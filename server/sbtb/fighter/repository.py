@@ -1,246 +1,120 @@
-import datetime
-from typing import Optional, List
+from datetime import datetime
+from typing import Sequence
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import func
 
-from sbtb.core.database.session import DbSession
-from sbtb.fighter.models import Fighter, Rank, FightOrganization, WeightClass, FightCard
-from sbtb.fighter.domain import FighterDomain, RankDomain, FightCardDomain, FightOrganizationDomain, WeightClassDomain
+from sbtb.core.repository.base import BaseRepository
+from sbtb.models import Fighter, Rank, FightOrganization, WeightClass, FightCard, Bout
+from sbtb.fighter.schemas import RankInput, BoutInput
 
 
-class FighterRepo:
-    def __init__(self, db: DbSession, *args, **kwargs):
-        self.db = db
+class FighterRepo(BaseRepository[Fighter]):
+    model = Fighter
 
-    @staticmethod
-    def to_domain(fighter_orm: Fighter) -> FighterDomain:
-        return FighterDomain.model_validate(fighter_orm)
-
-    @staticmethod
-    def from_domain(fighter_domain: FighterDomain) -> Fighter:
-        return Fighter(**fighter_domain.model_dump(exclude_unset=True))
-
-    async def get_by_id(self, fighter_id: int) -> Optional[FighterDomain]:
-        fighter = await self.db.get(Fighter, fighter_id)
-        return self.to_domain(fighter) if fighter else None
-
-    async def get_by_name(self, name: str) -> Optional[FighterDomain]:
-        query = await self.db.execute(
-            select(Fighter).where(Fighter.name == name)
+    async def get_by_name(self, name: str) -> Fighter | None:
+        return await self.get_one_or_none(
+            self.get_base_statement().where(Fighter.name == name)
         )
-        fighter = query.scalars().first()
-        return self.to_domain(fighter) if fighter else None
 
-    async def get_all(self) -> List[FighterDomain]:
-        query = await self.db.execute(select(Fighter))
-        fighters = query.scalars().all()
-        return [self.to_domain(f) for f in fighters]
+    async def get_all(self) -> Sequence[Fighter]:
+        return await super().get_all(self.get_base_statement())
 
-    async def get_or_create(self, raw_fighter: FighterDomain) -> FighterDomain:
-        query = await self.db.execute(select(Fighter).where(Fighter.name == raw_fighter.name))
-        fighter = query.scalars().first()
+    async def get_or_create(self, name: str) -> Fighter:
+        fighter = await self.get_by_name(name)
         if not fighter:
-            fighter = self.from_domain(raw_fighter)
-            self.db.add(fighter)
-            await self.db.commit()
-            await self.db.refresh(fighter)
-        return self.to_domain(fighter)
+            fighter = Fighter(name=name)
+            await self.create(fighter, flush=True)
+        return fighter
 
-    async def upsert(self, raw_fighter: FighterDomain) -> FighterDomain:
-        query = await self.db.execute(select(Fighter).where(Fighter.name == raw_fighter.name))
-        existing_fighter = query.scalars().first()
-
-        if existing_fighter:
-            for key, value in raw_fighter.model_dump(exclude_unset=True).items():
-                setattr(existing_fighter, key, value)
-            fighter = existing_fighter
+    async def upsert(self, name: str, **kwargs) -> Fighter:
+        fighter = await self.get_by_name(name)
+        if fighter:
+            await self.update(fighter, update_dict=kwargs, flush=True)
         else:
-            fighter = self.from_domain(raw_fighter)
-            self.db.add(fighter)
-
-        await self.db.commit()
-        await self.db.refresh(fighter)
-        return self.to_domain(fighter)
-
-    async def bulk_upsert(self, fighters: List[FighterDomain]) -> List[FighterDomain]:
-        fighter_objects = []
-        for raw_fighter in fighters:
-            existing_fighter = await self.db.execute(select(Fighter).where(Fighter.name == raw_fighter.name))
-            existing = existing_fighter.scalars().first()
-            if existing:
-                for key, value in raw_fighter.model_dump(exclude_unset=True).items():
-                    setattr(existing, key, value)
-                fighter_objects.append(existing)
-            else:
-                new_fighter = self.from_domain(raw_fighter)
-                fighter_objects.append(new_fighter)
-
-        self.db.add_all(fighter_objects)
-        await self.db.commit()
-        return [self.to_domain(f) for f in fighter_objects]
-
-    async def save(self, fighter: FighterDomain) -> FighterDomain:
-        orm_fighter = self.from_domain(fighter)
-        self.db.add(orm_fighter)
-        await self.db.commit()
-        await self.db.refresh(orm_fighter)
-        return self.to_domain(orm_fighter)
+            fighter = Fighter(name=name, **kwargs)
+            await self.create(fighter, flush=True)
+        return fighter
 
 
-class RankRepo:
-    def __init__(self, db: DbSession, *args, **kwargs):
-        self.db = db
+class RankRepo(BaseRepository[Rank]):
+    model = Rank
 
-    @staticmethod
-    def to_domain(rank_orm: Rank) -> RankDomain:
-        return RankDomain.model_validate(rank_orm)
-
-    @staticmethod
-    def from_domain(rank_domain: RankDomain) -> Rank:
-        return Rank(**rank_domain.model_dump(exclude_unset=True))
-
-    async def get_by_id(self, rank_id: int) -> Optional[RankDomain]:
-        rank_orm = await self.db.get(Rank, rank_id)
-        if not rank_orm:
-            return None
-        return self.to_domain(rank_orm)
-
-    async def bulk_upsert(self, ranks: List[RankDomain]) -> List[RankDomain]:
+    async def bulk_upsert(self, ranks: list[RankInput]) -> Sequence[Rank]:
         if not ranks:
             return []
 
         rank_dicts = [r.model_dump(exclude_unset=True) for r in ranks]
 
         stmt = pg_insert(Rank).values(rank_dicts)
-
         update_columns = {
             "fighter_id": stmt.excluded.fighter_id,
             "updated_at": func.now(),
         }
-
         stmt = stmt.on_conflict_do_update(
             index_elements=["rank", "weight_class_id", "organization_id"],
             set_=update_columns
         ).returning(Rank)
 
-        result = await self.db.execute(stmt)
-        await self.db.commit()
-
-        upserted_ranks = result.scalars().all()
-        return [self.to_domain(rank) for rank in upserted_ranks]
+        result = await self.session.execute(stmt)
+        return result.scalars().all()
 
 
-class FightOrganizationRepo:
-    def __init__(self, db: DbSession, *args, **kwargs):
-        self.db = db
+class FightOrganizationRepo(BaseRepository[FightOrganization]):
+    model = FightOrganization
 
-    @staticmethod
-    def to_domain(fight_org_orm: FightOrganization) -> FightOrganizationDomain:
-        return FightOrganizationDomain.model_validate(fight_org_orm)
-
-    @staticmethod
-    def from_domain(fight_org_domain: FightOrganizationDomain) -> FightOrganization:
-        return FightOrganization(**fight_org_domain.model_dump(exclude_unset=True))
-
-    async def get_all(self) -> List[FightOrganizationDomain]:
-        query = await self.db.execute(select(FightOrganization))
-        fight_orgs = query.scalars().all()
-        return [self.to_domain(f) for f in fight_orgs]
+    async def get_all(self) -> Sequence[FightOrganization]:
+        return await super().get_all(self.get_base_statement())
 
 
-class WeightClassRepo:
-    def __init__(self, db: DbSession, *args, **kwargs):
-        self.db = db
+class WeightClassRepo(BaseRepository[WeightClass]):
+    model = WeightClass
 
-    @staticmethod
-    def to_domain(weight_class_orm: WeightClass) -> WeightClassDomain:
-        return WeightClassDomain.model_validate(weight_class_orm)
-
-    @staticmethod
-    def from_domain(weight_class_domain: WeightClassDomain) -> WeightClass:
-        return WeightClass(**weight_class_domain.model_dump(exclude_unset=True))
-
-    async def get_all(self) -> List[WeightClassDomain]:
-        query = await self.db.execute(select(WeightClass))
-        weight_classes = query.scalars().all()
-        return [self.to_domain(f) for f in weight_classes]
+    async def get_all(self) -> Sequence[WeightClass]:
+        return await super().get_all(self.get_base_statement())
 
 
-class FightCardRepo:
-    def __init__(self, db: DbSession, *args, **kwargs):
-        self.db = db
+class FightCardRepo(BaseRepository[FightCard]):
+    model = FightCard
 
-    def to_domain(self, orm_card: FightCard) -> FightCardDomain:
-        return FightCardDomain(
-            id=orm_card.id,
-            event_name=orm_card.event_name,
-            location=orm_card.location,
-            event_date=orm_card.event_date,
-            fighters=[
-                FighterDomain(id=f.id, name=f.name)
-                for f in orm_card.fighters
-            ] if orm_card.fighters else []
+    async def get_or_create(
+        self,
+        *,
+        event_name: str,
+        event_date: datetime,
+        location: str | None = None,
+        network: str | None = None,
+    ) -> FightCard:
+        card = await self.get_one_or_none(
+            self.get_base_statement().where(FightCard.event_name == event_name)
         )
+        if not card:
+            card = FightCard(
+                event_name=event_name,
+                event_date=event_date,
+                location=location,
+                network=network,
+            )
+            await self.create(card, flush=True)
+        return card
 
-    async def _create_from_domain(self, fight_card_domain: FightCardDomain) -> FightCard:
-        orm_card = FightCard(**fight_card_domain.model_dump(exclude={"id", "fighters"}))
-
-        if fight_card_domain.fighters:
-            fighter_ids = [f.id for f in fight_card_domain.fighters if f.id]
-            if fighter_ids:
-                result = await self.db.execute(
-                    select(Fighter).where(Fighter.id.in_(fighter_ids))
-                )
-                fighters = result.scalars().all()
-                orm_card.fighters = fighters
-
-        self.db.add(orm_card)
-        await self.db.commit()
-        await self.db.refresh(orm_card)
-        return orm_card
-
-    async def _update_fighters(self, orm_card: FightCard, domain_fighters: list[FighterDomain]):
-        fighter_ids = [f.id for f in domain_fighters if f.id]
-        result = await self.db.execute(select(Fighter).where(Fighter.id.in_(fighter_ids)))
-        orm_card.fighters = result.scalars().all()
-
-    async def get_by_id(self, fight_card_id: int) -> Optional[FightCardDomain]:
-        orm_fight_card = await self.db.get(FightCard, fight_card_id)
-        if orm_fight_card:
-            await self.db.refresh(orm_fight_card)
-            return self.to_domain(orm_fight_card)
-        return None
-
-    async def get_or_create(self, fight_card_domain: FightCardDomain) -> FightCardDomain:
-        query = await self.db.execute(
-            select(FightCard).where(FightCard.event_name == fight_card_domain.event_name)
+    async def upsert_bouts(self, fight_card: FightCard, bouts: list[BoutInput]) -> FightCard:
+        await self.session.execute(
+            delete(Bout).where(Bout.fight_card_id == fight_card.id)
         )
-        orm_fight_card = query.scalars().first()
+        for bout_input in bouts:
+            await self.create(Bout(
+                fight_card_id=fight_card.id,
+                red_corner_id=bout_input.red_corner_id,
+                blue_corner_id=bout_input.blue_corner_id,
+                bout_order=bout_input.bout_order,
+                is_title_fight=bout_input.is_title_fight,
+            ))
 
-        if not orm_fight_card:
-            orm_fight_card = await self._create_from_domain(fight_card_domain)
+        await self.session.flush()
 
-        return self.to_domain(orm_fight_card)
-
-    async def upsert(self, fight_card_domain: FightCardDomain) -> FightCardDomain:
-        query = await self.db.execute(
-            select(FightCard).where(FightCard.event_name == fight_card_domain.event_name)
+        # Re-query to get the card with freshly loaded bouts
+        return await self.get_one_or_none(
+            self.get_base_statement().where(FightCard.id == fight_card.id)
         )
-        existing = query.scalars().first()
-
-        if existing:
-            for key, value in fight_card_domain.model_dump(exclude={"id", "fighters"}).items():
-                setattr(existing, key, value)
-            await self._update_fighters(existing, fight_card_domain.fighters)
-            await self.db.commit()
-            await self.db.refresh(existing)
-            return self.to_domain(existing)
-
-        new_orm = await self._create_from_domain(fight_card_domain)
-        return self.to_domain(new_orm)
-
-    async def save(self, fight_card_domain: FightCardDomain) -> FightCardDomain:
-        orm_card = await self._create_from_domain(fight_card_domain)
-        return self.to_domain(orm_card)

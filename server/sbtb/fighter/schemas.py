@@ -1,57 +1,74 @@
 from datetime import datetime
+from typing import List
+from uuid import UUID
 
-from pydantic import BaseModel
-from typing import List, Optional
+from pydantic import BaseModel, UUID4, ConfigDict
 
+from sbtb.core.schemas import BaseSchema, IDSchema
+
+
+# --- Internal DTOs (not for API responses) ---
 
 class RawBoxerSchema(BaseModel):
     name: str
     rank: float
-    is_champ: Optional[bool] = False
+    is_champ: bool = False
 
 
-class FighterRead(BaseModel):
+class RankInput(BaseSchema):
+    id: UUID4 | None = None
+    rank: float
+    fighter_id: UUID4
+    weight_class_id: UUID4
+    organization_id: UUID4
+
+
+class BoutInput(BaseSchema):
+    red_corner_id: UUID4
+    blue_corner_id: UUID4
+    bout_order: int | None = None
+    is_title_fight: bool = False
+
+
+# --- API Response Schemas ---
+
+class FighterRead(IDSchema):
     name: str
-    nickname: Optional[str] = None
-    age: Optional[int] = None
-    wins: Optional[int] = None
-    losses: Optional[int] = None
-    draws: Optional[int] = None
-
-    class Config:
-        from_attributes = True
+    nickname: str | None = None
+    age: int | None = None
+    wins: int | None = None
+    losses: int | None = None
+    draws: int | None = None
 
 
-class RankRead(BaseModel):
+class WeightClassRead(IDSchema):
+    name: str
+    pounds: int | None = None
+    kilos: int | None = None
+    upper_limit: int | None = None
+    lower_limit: int | None = None
+
+
+class FightOrganizationRead(IDSchema):
+    name: str | None = None
+
+
+class RankRead(BaseSchema):
     rank: float
     fighter_name: str
     weight_class_name: str
     organization_name: str
 
 
-class WeightClassRead(BaseModel):
-    name: str
-    pounds: Optional[int] = None
-    kilos: Optional[int] = None
-    upper_limit: Optional[int] = None
-    lower_limit: Optional[int] = None
-
-    class Config:
-        from_attributes = True
+class BoutRead(IDSchema):
+    bout_order: int | None = None
+    is_title_fight: bool
+    red_corner: FighterRead
+    blue_corner: FighterRead
 
 
-class FightOrganizationRead(BaseModel):
-    name: str
-
-    class Config:
-        from_attributes = True
-
-
-class FightCardRead(BaseModel):
-    event_name: str
-    location: str
+class FightCardRead(IDSchema):
+    event_name: str | None = None
+    location: str | None = None
     event_date: datetime
-    fighters: List[FighterRead] = []
-
-    class Config:
-        from_attributes = True
+    bouts: List[BoutRead] = []

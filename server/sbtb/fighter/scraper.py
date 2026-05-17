@@ -5,6 +5,7 @@ import pytz
 from abc import ABC, abstractmethod
 from typing import List, Dict, Optional, Any
 
+import aiohttp
 import bs4
 import selenium
 import selenium.webdriver
@@ -12,10 +13,12 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+import structlog
+
 from sbtb.core.config import settings
-from sbtb.core.logging import logger
-from sbtb.core.http_requests import get_request
 from sbtb.fighter.schemas import WeightClassRead, RawBoxerSchema
+
+logger = structlog.get_logger(__name__)
 from sbtb.fighter.driver import ChromeDriver
 
 
@@ -26,15 +29,15 @@ class BaseScraper(ABC):
 
     @abstractmethod
     async def run_scraper(self) -> List[Any]:
-        pass
+        ...
 
     @abstractmethod
     async def request_data(self) -> Optional[str]:
-        pass
+        ...
 
     @abstractmethod
     async def parse(self, raw_data: str) -> List[Any]:
-        pass
+        ...
 
 
 class BoxingRankScraper(BaseScraper):
@@ -49,11 +52,11 @@ class BoxingRankScraper(BaseScraper):
 
     async def request_data(self) -> Optional[str]:
         try:
-            res = get_request(url=self.URL, headers=self.HEADERS)
-            if res.status_code == 200:
-                html_source = res.text
-                return html_source
-        except Exception as e:
+            async with aiohttp.ClientSession(headers=self.HEADERS) as session:
+                async with session.get(self.URL, timeout=aiohttp.ClientTimeout(total=10)) as res:
+                    res.raise_for_status()
+                    return await res.text()
+        except Exception:
             logger.error(f"ERROR OCCURRED WHILE SCRAPING BOXING RANKINGS {traceback.format_exc()}")
         return None
 
