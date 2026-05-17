@@ -3,7 +3,7 @@ from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from .fighter.routes import router as fighter_router
 
-api_router = APIRouter(prefix="/api/v1")
+api_router = APIRouter(prefix="/api")
 
 api_router.include_router(fighter_router)
 
