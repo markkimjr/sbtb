@@ -5,7 +5,7 @@ from sqlalchemy import select, or_
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.sql import func
 
-from sbtb.database.session import DbSession
+from sbtb.core.database.session import DbSession
 from sbtb.fighter.models import Fighter, Rank, FightOrganization, WeightClass, FightCard
 from sbtb.fighter.domain import FighterDomain, RankDomain, FightCardDomain, FightOrganizationDomain, WeightClassDomain
 

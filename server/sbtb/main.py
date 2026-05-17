@@ -1,3 +1,5 @@
+from contextlib import asynccontextmanager
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -11,17 +13,19 @@ cors_allowed_origins = [
     "http://localhost:3000",
 ]
 
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("FastAPI sbtb app running...")
+    yield
+
+
 app = FastAPI(
     title="sbtbd",
     description="Backend for Saved By The Bell",
     version=settings.VERSION,
+    lifespan=lifespan,
 )
 
-
-async def on_startup() -> None:
-    logger.info("FastAPI sbtb app running...")
-
-
 app.add_middleware(CORSMiddleware, allow_origins=cors_allowed_origins, expose_headers=["x-content-range"])
-app.add_event_handler("startup", on_startup)
 app.include_router(routes.api_router)

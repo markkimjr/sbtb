@@ -1,6 +1,6 @@
 from fastapi import Depends
 
-from sbtb.database.session import DbSession
+from sbtb.core.database.session import DbSession
 from sbtb.fighter.scraper import BoxingRankScraper, BoxingFightCardScraper
 from sbtb.fighter.service import BoxerScraperService, BoxingFightCardService
 from sbtb.fighter.repository import FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo, FightCardRepo

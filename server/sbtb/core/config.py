@@ -8,7 +8,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    ENV: str = Field(default="dev")
+    ENV: str = Field(default="local")
     PROJECT_ROOT: Path = Path(__file__).parent.parent.resolve()
 
     LOG_LEVEL: int = Field(default=logging.INFO)
