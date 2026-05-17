@@ -1,0 +1,23 @@
+repos:
+  # Lint and format Python code with Ruff
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.15.4
+    hooks:
+      - id: ruff
+      - id: ruff-format
+
+  # Validate/update uv.lock
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.6.3
+    hooks:
+      - id: uv-lock
+
+  # Export requirements.txt for Docker builds
+  - repo: local
+    hooks:
+      - id: uv-export
+        name: uv-export
+        entry: uv export --no-hashes --no-dev --no-emit-project -o requirements.txt
+        language: system
+        files: ^(pyproject\.toml|uv\.lock)$
+        pass_filenames: false
