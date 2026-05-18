@@ -65,12 +65,13 @@ def upgrade() -> None:
     op.create_table('weight_classes',
     sa.Column('name', sa.String(), nullable=False),
     sa.Column('pounds', sa.Integer(), nullable=True),
+    sa.Column('sport', postgresql.ENUM('boxing', 'mma', name='combatsport', create_type=False), nullable=False),
     sa.Column('id', sa.Uuid(), server_default=sa.text('gen_random_uuid()'), nullable=False),
     sa.Column('created_at', sa.TIMESTAMP(timezone=True), nullable=False),
     sa.Column('modified_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.Column('deleted_at', sa.TIMESTAMP(timezone=True), nullable=True),
     sa.PrimaryKeyConstraint('id', name=op.f('weight_classes_pkey')),
-    sa.UniqueConstraint('name', name='uq_weight_classes_name')
+    sa.UniqueConstraint('name', 'sport', name='uq_weight_classes_name_sport')
     )
     op.create_index(op.f('ix_weight_classes_created_at'), 'weight_classes', ['created_at'], unique=False)
     op.create_table('bouts',
@@ -120,6 +121,7 @@ def downgrade() -> None:
     op.drop_table('bouts')
     op.drop_index(op.f('ix_weight_classes_created_at'), table_name='weight_classes')
     op.drop_table('weight_classes')
+
     op.drop_index(op.f('ix_fighters_name'), table_name='fighters')
     op.drop_index(op.f('ix_fighters_created_at'), table_name='fighters')
     op.drop_table('fighters')

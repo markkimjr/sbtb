@@ -9,7 +9,7 @@ from sbtb.core.config import settings
 
 engine = create_async_engine(
     settings.POSTGRES_DATABASE_URL,
-    echo=settings.DEBUG,
+    echo=settings.SQLALCHEMY_ECHO,
     future=True,
     pool_size=settings.POOL_SIZE,
     pool_pre_ping=True,

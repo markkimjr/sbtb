@@ -54,9 +54,9 @@ def upgrade() -> None:
     for name, pounds in WEIGHT_CLASSES:
         pounds_value = str(pounds) if pounds is not None else "NULL"
         op.execute(
-            f"INSERT INTO weight_classes (id, name, pounds, created_at) "
-            f"VALUES (gen_random_uuid(), '{name}', {pounds_value}, NOW()) "
-            f"ON CONFLICT (name) DO NOTHING"
+            f"INSERT INTO weight_classes (id, name, pounds, sport, created_at) "
+            f"VALUES (gen_random_uuid(), '{name}', {pounds_value}, 'boxing', NOW()) "
+            f"ON CONFLICT (name, sport) DO NOTHING"
         )
 
 

@@ -36,27 +36,41 @@ def upgrade() -> None:
     # (email nulled, deleted_at set). A FK would block deleting auth.users while the
     # public.users row still exists.
 
-    # Trigger: auto-insert into public.users when a new auth user is created
+    # Trigger: auto-insert into public.users when a new auth user is created.
+    # Wrapped in an auth schema existence check so the migration runs cleanly on
+    # local Postgres (no auth schema) and executes fully on Supabase.
     op.execute("""
-        CREATE OR REPLACE FUNCTION public.handle_new_user()
-        RETURNS trigger AS $$
+        DO $$
         BEGIN
-            INSERT INTO public.users (id, email, created_at)
-            VALUES (NEW.id, NEW.email, NOW());
-            RETURN NEW;
-        END;
-        $$ LANGUAGE plpgsql SECURITY DEFINER;
-    """)
+            IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'auth') THEN
+                CREATE OR REPLACE FUNCTION public.handle_new_user()
+                RETURNS trigger AS $func$
+                BEGIN
+                    INSERT INTO public.users (id, email, created_at)
+                    VALUES (NEW.id, NEW.email, NOW());
+                    RETURN NEW;
+                END;
+                $func$ LANGUAGE plpgsql SECURITY DEFINER;
 
-    op.execute("""
-        CREATE TRIGGER on_auth_user_created
-        AFTER INSERT ON auth.users
-        FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+                CREATE TRIGGER on_auth_user_created
+                AFTER INSERT ON auth.users
+                FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
+            END IF;
+        END;
+        $$;
     """)
 
 
 def downgrade() -> None:
-    op.execute("DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users")
+    op.execute("""
+        DO $$
+        BEGIN
+            IF EXISTS (SELECT 1 FROM information_schema.schemata WHERE schema_name = 'auth') THEN
+                DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+            END IF;
+        END;
+        $$;
+    """)
     op.execute("DROP FUNCTION IF EXISTS public.handle_new_user()")
     op.drop_index(op.f("ix_users_email"), table_name="users")
     op.drop_index(op.f("ix_users_created_at"), table_name="users")

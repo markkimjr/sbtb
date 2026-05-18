@@ -2,7 +2,9 @@ import json
 import os
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 _SERVER_DIR = Path(__file__).parent.parent.parent
@@ -32,11 +34,12 @@ class Settings(BaseSettings):
     LOG_LEVEL: int = 20
 
     DEBUG: bool = True
+    SQLALCHEMY_ECHO: bool = True
 
-    POSTGRES_USER: str = "sbtb"
-    POSTGRES_PASSWORD: str = "sbtb"
+    POSTGRES_USER: str = "local"
+    POSTGRES_PASSWORD: str = "local"
     POSTGRES_HOST: str = "127.0.0.1"
-    POSTGRES_PORT: int = 6543
+    POSTGRES_PORT: int = 5432
     POSTGRES_SESSION_PORT: int = 5432
     POSTGRES_DB: str = "sbtb"
     POOL_SIZE: int = 10
@@ -55,18 +58,18 @@ class Settings(BaseSettings):
     BOXING_SCHEDULE_URL: str | None = None
     BOXING_HEADERS: dict | None = None
 
+    @field_validator("BOXING_HEADERS", mode="before")
+    @classmethod
+    def parse_boxing_headers(cls, v: Any) -> dict | None:
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
+
     model_config = SettingsConfigDict(
         env_file=_env_file,
         env_file_encoding="utf-8",
         extra="allow",
     )
-
-    @classmethod
-    def parse_obj(cls, obj):
-        for key, value in obj.items():
-            if "_HEADERS" in key and isinstance(value, str):
-                obj[key] = json.loads(value)
-        return super().model_validate(obj)
 
     @property
     def POSTGRES_DATABASE_URL(self) -> str:
