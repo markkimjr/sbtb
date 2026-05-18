@@ -3,6 +3,7 @@ from .fight_card import FightCard
 from .fight_organization import FightOrganization
 from .fighter import Fighter
 from .rank import Rank
+from .user import User
 from .weight_class import WeightClass
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     "Fighter",
     "Bout",
     "Rank",
+    "User",
 ]
