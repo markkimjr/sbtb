@@ -1,8 +1,10 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, Response
 
+from sbtb.auth.permissions import SuperuserDep
 from sbtb.core.database.session import DbSession
-from sbtb.fighter.schemas import FightCardRead, RankRead
+from sbtb.fighter.image_generator import fighter_image_generator
+from sbtb.fighter.schemas import AvatarGenerationResult, FightCardRead, RankRead
 from sbtb.fighter.service import boxer_scraper_service, boxing_fight_card_service
 
 router = APIRouter(prefix="/fighter")
@@ -31,3 +33,13 @@ async def scrape_and_save_boxing_ranks(session: DbSession) -> list[RankRead]:
 )
 async def scrape_and_save_boxing_fight_cards(session: DbSession) -> list[FightCardRead]:
     return await boxing_fight_card_service.scrape_and_update_boxing_fight_cards(session=session)
+
+
+@router.post(
+    "/generate-avatars",
+    response_description="Generate Ghibli avatars for fighters missing one",
+    response_model=AvatarGenerationResult,
+    tags=["fighters"],
+)
+async def generate_fighter_avatars(session: DbSession, _: SuperuserDep) -> AvatarGenerationResult:
+    return await fighter_image_generator.generate_fighter_avatars(session=session)

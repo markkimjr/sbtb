@@ -41,6 +41,11 @@ class BoutInput(BaseSchema):
 # --- API Response Schemas ---
 
 
+class AvatarGenerationResult(BaseSchema):
+    updated: list[str]
+    skipped: list[str]
+
+
 class FighterRead(IDSchema):
     name: str
     nickname: str | None = None

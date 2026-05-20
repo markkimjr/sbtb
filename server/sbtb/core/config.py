@@ -54,16 +54,18 @@ class Settings(BaseSettings):
     ]
     CORS_ALLOWED_HEADERS: list[str] = ["*"]
 
+    SUPABASE_URL: str | None = None
+    SUPABASE_SECRET_KEY: str | None = None
+
+    JWT_SECRET: str | None = None
+
+    SERPAPI_KEY: str | None = None
+
+    OPENAI_API_KEY: str | None = None
+
     BOXING_RANKINGS_URL: str | None = None
     BOXING_SCHEDULE_URL: str | None = None
     BOXING_HEADERS: dict | None = None
-
-    @field_validator("BOXING_HEADERS", mode="before")
-    @classmethod
-    def parse_boxing_headers(cls, v: Any) -> dict | None:
-        if isinstance(v, str):
-            return json.loads(v)
-        return v
 
     model_config = SettingsConfigDict(
         env_file=_env_file,
@@ -78,6 +80,13 @@ class Settings(BaseSettings):
     @property
     def POSTGRES_DATABASE_SESSION_URL(self) -> str:
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@{self.POSTGRES_HOST}:{self.POSTGRES_SESSION_PORT}/{self.POSTGRES_DB}"
+
+    @field_validator("BOXING_HEADERS", mode="before")
+    @classmethod
+    def parse_boxing_headers(cls, v: Any) -> dict | None:
+        if isinstance(v, str):
+            return json.loads(v)
+        return v
 
     def is_environment(self, environments: set[Environment]) -> bool:
         return self.ENV in environments

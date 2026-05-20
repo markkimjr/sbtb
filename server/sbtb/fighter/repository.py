@@ -25,6 +25,9 @@ class FighterRepo(BaseRepository[Fighter]):
             await self.create(fighter, flush=True)
         return fighter
 
+    async def get_without_avatar(self) -> Sequence[Fighter]:
+        return await self.get_all(self.get_base_statement().where(Fighter.avatar_url.is_(None)))
+
     async def upsert(self, name: str, **kwargs) -> Fighter:
         fighter = await self.get_by_name(name)
         if fighter:
