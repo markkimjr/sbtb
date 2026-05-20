@@ -15,9 +15,6 @@ class FighterRepo(BaseRepository[Fighter]):
     async def get_by_name(self, name: str) -> Fighter | None:
         return await self.get_one_or_none(self.get_base_statement().where(Fighter.name == name))
 
-    async def get_all(self) -> Sequence[Fighter]:
-        return await super().get_all(self.get_base_statement())
-
     async def get_or_create(self, name: str) -> Fighter:
         fighter = await self.get_by_name(name)
         if not fighter:
@@ -57,15 +54,9 @@ class RankRepo(BaseRepository[Rank]):
 class FightOrganizationRepo(BaseRepository[FightOrganization]):
     model = FightOrganization
 
-    async def get_all(self) -> Sequence[FightOrganization]:
-        return await super().get_all(self.get_base_statement())
-
 
 class WeightClassRepo(BaseRepository[WeightClass]):
     model = WeightClass
-
-    async def get_all(self) -> Sequence[WeightClass]:
-        return await super().get_all(self.get_base_statement())
 
 
 class FightCardRepo(BaseRepository[FightCard]):

@@ -24,8 +24,8 @@ class BoxerScraperService:
             weight_class_repo = WeightClassRepo.from_session(session)
             rank_repo = RankRepo.from_session(session)
 
-            organizations = await organization_repo.get_all()
-            weight_classes = await weight_class_repo.get_all()
+            organizations = await organization_repo.get_all(organization_repo.get_base_statement())
+            weight_classes = await weight_class_repo.get_all(weight_class_repo.get_base_statement())
 
             rank_reads = []
             ranks_to_upsert = []
