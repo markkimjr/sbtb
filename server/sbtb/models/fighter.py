@@ -13,3 +13,4 @@ class Fighter(RecordModel):
     wins: Mapped[int] = mapped_column(nullable=False, default=0)
     losses: Mapped[int] = mapped_column(nullable=False, default=0)
     draws: Mapped[int] = mapped_column(nullable=False, default=0)
+    avatar_url: Mapped[str | None] = mapped_column(String, nullable=True)

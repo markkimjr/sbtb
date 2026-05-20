@@ -22,6 +22,10 @@ def upgrade() -> None:
         "users",
         sa.Column("id", sa.Uuid(), nullable=False),
         sa.Column("email", sa.String(), nullable=True),
+        sa.Column("notification_email", sa.String(), nullable=True),
+        sa.Column("timezone", sa.String(), nullable=True),
+        sa.Column("is_active", sa.Boolean(), nullable=False, server_default="true"),
+        sa.Column("is_superuser", sa.Boolean(), nullable=False, server_default="false"),
         sa.Column("created_at", sa.TIMESTAMP(timezone=True), nullable=False),
         sa.Column("modified_at", sa.TIMESTAMP(timezone=True), nullable=True),
         sa.Column("deleted_at", sa.TIMESTAMP(timezone=True), nullable=True),
@@ -46,8 +50,8 @@ def upgrade() -> None:
                 CREATE OR REPLACE FUNCTION public.handle_new_user()
                 RETURNS trigger AS $func$
                 BEGIN
-                    INSERT INTO public.users (id, email, created_at)
-                    VALUES (NEW.id, NEW.email, NOW());
+                    INSERT INTO public.users (id, email, is_active, is_superuser, created_at)
+                    VALUES (NEW.id, NEW.email, true, false, NOW());
                     RETURN NEW;
                 END;
                 $func$ LANGUAGE plpgsql SECURITY DEFINER;
