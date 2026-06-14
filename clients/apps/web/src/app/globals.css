@@ -1,0 +1,150 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  /* ── Brand palette ── */
+  --color-parchment: #f4ecd8;
+  --color-ink: #1b1611;
+  --color-persimmon: #c4452e;
+  --color-persimmon-bright: #d85a3f;
+  --color-moss: #4a6b3e;
+  --color-moss-bright: #7fa86a;
+  --color-sand: #e2d6bb;
+  --color-sand-dark: #2a2419;
+  --color-muted-warm: #6b6155;
+  --color-muted-warm-dark: #a89c88;
+
+  /* ── Fonts (CSS vars injected by next/font — see src/lib/fonts.ts) ── */
+  --font-display: var(--font-fraunces), ui-serif, Georgia, serif;
+  --font-body: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+
+  /* ── Shadows ── */
+  --shadow-paper: 0 8px 24px -8px rgba(27, 22, 17, 0.12);
+  --shadow-card-hover: 0 14px 32px -16px rgba(27, 22, 17, 0.22);
+  --shadow-focus-card: 0 28px 56px -24px rgba(27, 22, 17, 0.35);
+}
+
+@theme inline {
+  --font-heading: var(--font-display);
+  --font-sans: var(--font-body);
+
+  /* Map shadcn semantic tokens → our palette so shadcn components inherit our look */
+  --color-background: var(--color-parchment);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-parchment);
+  --color-card-foreground: var(--color-ink);
+  --color-popover: var(--color-parchment);
+  --color-popover-foreground: var(--color-ink);
+  --color-primary: var(--color-persimmon);
+  --color-primary-foreground: var(--color-parchment);
+  --color-secondary: var(--color-sand);
+  --color-secondary-foreground: var(--color-ink);
+  --color-muted: var(--color-sand);
+  --color-muted-foreground: var(--color-muted-warm);
+  --color-accent: var(--color-sand);
+  --color-accent-foreground: var(--color-ink);
+  --color-destructive: var(--color-persimmon);
+  --color-border: var(--color-sand);
+  --color-input: var(--color-sand);
+  --color-ring: var(--color-ink);
+  --radius: 0.625rem;
+}
+
+/* ── shadcn semantic CSS vars (light) ── */
+:root {
+  --background: var(--color-parchment);
+  --foreground: var(--color-ink);
+  --card: var(--color-parchment);
+  --card-foreground: var(--color-ink);
+  --popover: var(--color-parchment);
+  --popover-foreground: var(--color-ink);
+  --primary: var(--color-persimmon);
+  --primary-foreground: var(--color-parchment);
+  --secondary: var(--color-sand);
+  --secondary-foreground: var(--color-ink);
+  --muted: var(--color-sand);
+  --muted-foreground: var(--color-muted-warm);
+  --accent: var(--color-sand);
+  --accent-foreground: var(--color-ink);
+  --destructive: var(--color-persimmon);
+  --border: var(--color-sand);
+  --input: var(--color-sand);
+  --ring: var(--color-ink);
+}
+
+/* ── Dark mode overrides ── */
+.dark {
+  --background: #1b1611;
+  --foreground: #f4ecd8;
+  --card: #1b1611;
+  --card-foreground: #f4ecd8;
+  --popover: #1b1611;
+  --popover-foreground: #f4ecd8;
+  --primary: #d85a3f;
+  --primary-foreground: #1b1611;
+  --secondary: #2a2419;
+  --secondary-foreground: #f4ecd8;
+  --muted: #2a2419;
+  --muted-foreground: #a89c88;
+  --accent: #2a2419;
+  --accent-foreground: #f4ecd8;
+  --destructive: #d85a3f;
+  --border: #2a2419;
+  --input: #2a2419;
+  --ring: #f4ecd8;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    background: var(--color-parchment);
+    color: var(--color-ink);
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Paper-grain background — fixed, low-opacity SVG noise */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    opacity: 0.05;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  }
+
+  .dark body::before {
+    opacity: 0.012;
+  }
+}
+
+@layer utilities {
+  /* Brand ink-stamp accent — used behind the wordmark */
+  .ink-stamp {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .ink-stamp::before {
+    content: "";
+    position: absolute;
+    inset: -2px -4px;
+    background: var(--color-persimmon);
+    opacity: 0.12;
+    border-radius: 4px;
+    transform: rotate(-1.5deg);
+    z-index: -1;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+  }
+}
