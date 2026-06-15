@@ -68,7 +68,7 @@ class SupabaseHandler:
                 file=file,
                 file_options={"content-type": content_type, "upsert": "true"},
             )
-            url = self.supabase_client.storage.from_(bucket).get_public_url(path)
+            url = await self.supabase_client.storage.from_(bucket).get_public_url(path)
             logger.info("Uploaded file to Supabase Storage", bucket=bucket, path=path)
             return url
         except Exception:

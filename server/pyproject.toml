@@ -26,9 +26,11 @@ dependencies = [
     "pytz>=2025.2",
     "greenlet>=3.5.0",
     "pyjwt[cryptography]>=2.8.0",
-    "openai>=1.0.0",
+    "replicate>=1.0.0",
     "supabase>=2.0.0",
     "Pillow>=11.0.0",
+    "openai>=1.50.0",
+    "google-genai>=2.8.0",
 ]
 
 [build-system]

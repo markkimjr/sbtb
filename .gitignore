@@ -175,3 +175,6 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 .idea
+
+# Superpowers visual brainstorm tool — local-only mockup HTML
+.superpowers/

@@ -55,6 +55,11 @@ class FighterRead(IDSchema):
     draws: int | None = None
 
 
+class FeaturedFighterRead(IDSchema):
+    name: str
+    avatar_url: str | None = None
+
+
 class WeightClassRead(IDSchema):
     name: str
     pounds: int | None = None

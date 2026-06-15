@@ -1,10 +1,18 @@
 import structlog
 
 from sbtb.core.database.session import DbSession
-from sbtb.fighter.repository import FightCardRepo, FighterRepo, FightOrganizationRepo, RankRepo, WeightClassRepo
-from sbtb.fighter.schemas import BoutInput, ParsedFightCard, RankInput, RankRead
+from sbtb.fighter.repository import (
+    FeaturedFighterRepo,
+    FightCardRepo,
+    FighterRepo,
+    FightOrganizationRepo,
+    RankRepo,
+    WeightClassRepo,
+)
+from sbtb.fighter.schemas import BoutInput, FeaturedFighterRead, ParsedFightCard, RankInput, RankRead
 from sbtb.fighter.scraper import BoxingFightCardScraper, BoxingRankScraper
 from sbtb.models import FightCard, Fighter
+from sbtb.models.featured_fighter import FeaturedCollection
 
 logger = structlog.get_logger(__name__)
 
@@ -167,5 +175,20 @@ class BoxingFightCardService:
             return []
 
 
+class FeaturedFighterService:
+    async def get_by_collection(self, session: DbSession, collection: FeaturedCollection) -> list[FeaturedFighterRead]:
+        repo = FeaturedFighterRepo.from_session(session)
+        featured = await repo.get_by_collection(collection=collection)
+        return [
+            FeaturedFighterRead(
+                id=entry.fighter.id,
+                name=entry.fighter.name,
+                avatar_url=entry.fighter.avatar_url,
+            )
+            for entry in featured
+        ]
+
+
 boxer_scraper_service = BoxerScraperService(scraper=BoxingRankScraper())
 boxing_fight_card_service = BoxingFightCardService()
+featured_fighter_service = FeaturedFighterService()

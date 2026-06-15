@@ -3,10 +3,12 @@ from typing import Sequence
 
 from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert as pg_insert
+from sqlalchemy.orm import joinedload
 
 from sbtb.core.repository.base import BaseRepository
 from sbtb.fighter.schemas import BoutInput, RankInput
-from sbtb.models import Bout, FightCard, Fighter, FightOrganization, Rank, WeightClass
+from sbtb.models import Bout, FeaturedFighter, FightCard, Fighter, FightOrganization, Rank, WeightClass
+from sbtb.models.featured_fighter import FeaturedCollection
 
 
 class FighterRepo(BaseRepository[Fighter]):
@@ -33,6 +35,19 @@ class FighterRepo(BaseRepository[Fighter]):
             fighter = Fighter(name=name, **kwargs)
             await self.create(fighter, flush=True)
         return fighter
+
+
+class FeaturedFighterRepo(BaseRepository[FeaturedFighter]):
+    model = FeaturedFighter
+
+    async def get_by_collection(self, collection: FeaturedCollection) -> Sequence[FeaturedFighter]:
+        statement = (
+            self.get_base_statement()
+            .options(joinedload(FeaturedFighter.fighter))
+            .where(FeaturedFighter.collection == collection)
+            .order_by(FeaturedFighter.position.asc().nulls_last(), FeaturedFighter.created_at.asc())
+        )
+        return await self.get_all(statement)
 
 
 class RankRepo(BaseRepository[Rank]):

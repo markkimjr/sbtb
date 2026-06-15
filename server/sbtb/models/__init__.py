@@ -1,4 +1,5 @@
 from .bout import Bout
+from .featured_fighter import FeaturedFighter
 from .fight_card import FightCard
 from .fight_organization import FightOrganization
 from .fighter import Fighter
@@ -14,4 +15,5 @@ __all__ = [
     "Bout",
     "Rank",
     "User",
+    "FeaturedFighter",
 ]
