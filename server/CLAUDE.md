@@ -33,7 +33,7 @@ uv run ruff format .         # Format
 
 ### Module Structure (`sbtb/`)
 - **`app.py`** — FastAPI app factory with middleware (CORS, Sentry, correlation IDs)
-- **`routes.py`** — API router combining all domain routers under `/api/v1`
+- **`routes.py`** — API router combining all domain routers under `/api`
 
 ### Domain Modules
 Each domain follows this pattern: `{domain}/routes.py`, `{domain}/schemas.py`, `{domain}/service.py`, `{domain}/repository.py`
