@@ -14,6 +14,7 @@ class Environment(StrEnum):
     local = "local"
     development = "development"
     testing = "testing"
+    local_production = "local_production"
     production = "production"
 
 
@@ -24,6 +25,8 @@ elif env == Environment.testing:
     _env_file = str(_SERVER_DIR / ".env.test")
 elif env == Environment.production:
     _env_file = str(_SERVER_DIR / ".env.prod")
+elif env == Environment.local_production:
+    _env_file = str(_SERVER_DIR / ".env.local_prod")
 else:
     _env_file = str(_SERVER_DIR / ".env.local")
 
@@ -51,6 +54,7 @@ class Settings(BaseSettings):
         "https://sbtb.io",
         "http://localhost",
         "http://localhost:3000",
+        "http://localhost:3001",
     ]
     CORS_ALLOWED_HEADERS: list[str] = ["*"]
 
@@ -60,8 +64,8 @@ class Settings(BaseSettings):
     JWT_SECRET: str | None = None
 
     SERPAPI_KEY: str | None = None
-
     OPENAI_API_KEY: str | None = None
+    GEMINI_API_KEY: str | None = None
 
     BOXING_RANKINGS_URL: str | None = None
     BOXING_SCHEDULE_URL: str | None = None
