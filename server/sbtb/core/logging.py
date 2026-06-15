@@ -2,25 +2,17 @@ import logging
 import logging.config
 from typing import Any, Generic, TypeVar
 
-import fastapi
-import rich
-import sentry_sdk
-import starlette
 import structlog
-import uvicorn
 from asgi_correlation_id import correlation_id
-from rich.traceback import install as install_rich_traceback
-from structlog.dev import ConsoleRenderer, RichTracebackFormatter
+from structlog.dev import ConsoleRenderer, plain_traceback
 
-from sbtb.core.config import settings
+from sbtb.core.config import Environment, env, settings
 
 Logger = structlog.stdlib.BoundLogger
 RendererType = TypeVar("RendererType")
 
 
-def add_correlation_id(
-    logger: logging.Logger, method_name: str, event_dict: dict[str, Any]
-) -> dict[str, Any]:
+def add_correlation_id(logger: logging.Logger, method_name: str, event_dict: dict[str, Any]) -> dict[str, Any]:
     """Add correlation ID from asgi_correlation_id to log events."""
     cid = correlation_id.get()
     event_dict["correlation_id"] = cid if cid else "-"
@@ -42,9 +34,7 @@ class CustomLogging(Generic[RendererType]):
             structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
             structlog.stdlib.add_logger_name,
-            structlog.processors.CallsiteParameterAdder(
-                [structlog.processors.CallsiteParameter.LINENO]
-            ),
+            structlog.processors.CallsiteParameterAdder([structlog.processors.CallsiteParameter.LINENO]),
             structlog.stdlib.PositionalArgumentsFormatter(),
             add_correlation_id,
             cls.timestamper,
@@ -64,9 +54,7 @@ class CustomLogging(Generic[RendererType]):
             structlog.contextvars.merge_contextvars,
             structlog.stdlib.add_log_level,
             structlog.stdlib.add_logger_name,
-            structlog.processors.CallsiteParameterAdder(
-                [structlog.processors.CallsiteParameter.LINENO]
-            ),
+            structlog.processors.CallsiteParameterAdder([structlog.processors.CallsiteParameter.LINENO]),
             structlog.stdlib.PositionalArgumentsFormatter(),
             structlog.stdlib.ExtraAdder(),
             add_correlation_id,
@@ -110,10 +98,10 @@ class CustomLogging(Generic[RendererType]):
                         "level": "DEBUG",
                         "propagate": False,
                     },
-                    # Suppress noisy uvicorn access logs
+                    # Suppress noisy uvicorn access logs (production only)
                     "uvicorn.access": {
                         "handlers": [],
-                        "level": "WARNING",
+                        "level": "WARNING" if env == Environment.production else "INFO",
                         "propagate": False,
                     },
                     # Propagate third-party loggers to the root logger
@@ -157,20 +145,11 @@ class Development(CustomLogging[ConsoleRenderer]):
     def get_renderer(cls) -> ConsoleRenderer:
         return ConsoleRenderer(
             colors=True,
-            exception_formatter=RichTracebackFormatter(
-                show_locals=False,
-                width=120,
-                suppress=[structlog, starlette, uvicorn, fastapi, sentry_sdk],
-            ),
+            exception_formatter=plain_traceback,
         )
 
     @classmethod
     def configure(cls) -> None:
-        install_rich_traceback(
-            show_locals=False,
-            width=120,
-            suppress=[structlog, starlette, uvicorn, rich, fastapi, sentry_sdk],
-        )
         super().configure()
 
 
