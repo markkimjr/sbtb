@@ -1,11 +1,11 @@
 "use client";
 
-import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import type { Fighter } from "@/types/fighter";
+import type { FeaturedFighter } from "@/types/fighter";
+import type { ReactNode } from "react";
 
 type FighterCardProps = {
-  fighter: Fighter;
+  fighter: FeaturedFighter;
   variant?: "focus" | "peek" | "compact";
   bookmark?: ReactNode;
 };
@@ -16,6 +16,8 @@ const VARIANT_CLASSES: Record<string, string> = {
   peek: "blur-[3px] opacity-45 scale-[0.88]",
   compact: "",
 };
+
+const DEFAULT_GRADIENT = "linear-gradient(135deg, #c19c7a 0%, #836040 50%, #3a2715 100%)";
 
 export function FighterCard({ fighter, variant = "compact", bookmark }: FighterCardProps) {
   return (
@@ -28,7 +30,15 @@ export function FighterCard({ fighter, variant = "compact", bookmark }: FighterC
       {/* Portrait area */}
       <div
         className="w-full aspect-square relative"
-        style={{ background: fighter.placeholderGradient }}
+        style={
+          fighter.avatarUrl
+            ? {
+                backgroundImage: `url(${fighter.avatarUrl})`,
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+              }
+            : { background: DEFAULT_GRADIENT }
+        }
       >
         {/* Paper grain overlay on portrait */}
         <div
@@ -45,13 +55,6 @@ export function FighterCard({ fighter, variant = "compact", bookmark }: FighterC
       <div className="p-5 flex flex-col gap-1.5">
         <div className="font-display italic text-[26px] leading-[1.1] tracking-[-0.015em]">
           {fighter.name}
-        </div>
-        <div className="text-[11px] uppercase tracking-[0.12em] opacity-65">
-          {fighter.weightClass}
-        </div>
-        <div className="mt-2 text-xs opacity-70 font-mono tracking-wider">
-          {fighter.wins}–{fighter.losses}
-          {fighter.draws > 0 ? `–${fighter.draws}` : ""} · {fighter.knockouts} KO
         </div>
       </div>
     </div>

@@ -1,9 +1,9 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
 import { useToggleBookmark } from "@/hooks/use-toggle-bookmark";
 import { MOCK_FIGHTERS } from "@/lib/mock-fighters";
 import { useModalStore } from "@/store/modal";
+import { Bookmark } from "lucide-react";
 
 export function BookmarkedFightersGrid() {
   const bookmarks = useModalStore((s) => s.bookmarks);
@@ -17,8 +17,8 @@ export function BookmarkedFightersGrid() {
         <div className="space-y-1">
           <h2 className="font-display italic text-2xl">Your bookmarked fighters</h2>
           <p className="text-sm opacity-70">
-            You haven&apos;t saved any fighters yet — head back to the carousel and
-            tap the bookmark icon.
+            You haven&apos;t saved any fighters yet — head back to the carousel and tap the bookmark
+            icon.
           </p>
         </div>
       </section>
@@ -40,16 +40,13 @@ export function BookmarkedFightersGrid() {
           >
             <div
               className="aspect-square w-full"
-              style={{ background: f.placeholderGradient }}
+              style={{
+                background: "linear-gradient(135deg, #c19c7a 0%, #836040 50%, #3a2715 100%)",
+              }}
             />
             <div className="p-3 flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="font-display italic text-base leading-tight truncate">
-                  {f.name}
-                </div>
-                <div className="text-[10px] uppercase tracking-wider opacity-60">
-                  {f.weightClass}
-                </div>
+                <div className="font-display italic text-base leading-tight truncate">{f.name}</div>
               </div>
               <button
                 type="button"

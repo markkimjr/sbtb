@@ -1,14 +1,14 @@
 "use client";
 
+import { useCarouselStore } from "@/store/carousel";
+import type { FeaturedFighter } from "@/types/fighter";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { type ReactNode, useEffect } from "react";
-import { useCarouselStore } from "@/store/carousel";
-import type { Fighter } from "@/types/fighter";
 import { FighterCard } from "./fighter-card";
 
 type FighterCarouselProps = {
-  fighters: Fighter[];
-  renderBookmark: (fighter: Fighter) => ReactNode;
+  fighters: FeaturedFighter[];
+  renderBookmark: (fighter: FeaturedFighter) => ReactNode;
 };
 
 export function FighterCarousel({ fighters, renderBookmark }: FighterCarouselProps) {
@@ -48,7 +48,10 @@ export function FighterCarousel({ fighters, renderBookmark }: FighterCarouselPro
         onClick={prev}
         className="absolute left-8 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[14px] bg-[var(--color-parchment)] border border-[var(--color-sand)] grid place-items-center shadow-[var(--shadow-paper)] opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-[var(--color-persimmon)] hover:text-[var(--color-parchment)] hover:[&>svg]:stroke-[var(--color-parchment)]"
       >
-        <ChevronLeft className="w-[22px] h-[22px] stroke-[var(--color-ink)] transition-all" strokeWidth={2} />
+        <ChevronLeft
+          className="w-[22px] h-[22px] stroke-[var(--color-ink)] transition-all"
+          strokeWidth={2}
+        />
       </button>
 
       <div className="flex items-center justify-center gap-9 w-full">
@@ -59,11 +62,7 @@ export function FighterCarousel({ fighters, renderBookmark }: FighterCarouselPro
             bookmark={renderBookmark(prevFighter)}
           />
         )}
-        <FighterCard
-          fighter={focus}
-          variant="focus"
-          bookmark={renderBookmark(focus)}
-        />
+        <FighterCard fighter={focus} variant="focus" bookmark={renderBookmark(focus)} />
         {fighters.length > 1 && (
           <FighterCard
             fighter={nextFighter}
@@ -80,7 +79,10 @@ export function FighterCarousel({ fighters, renderBookmark }: FighterCarouselPro
         onClick={next}
         className="absolute right-8 top-1/2 -translate-y-1/2 w-14 h-14 rounded-[14px] bg-[var(--color-parchment)] border border-[var(--color-sand)] grid place-items-center shadow-[var(--shadow-paper)] opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-[var(--color-persimmon)] hover:text-[var(--color-parchment)] hover:[&>svg]:stroke-[var(--color-parchment)]"
       >
-        <ChevronRight className="w-[22px] h-[22px] stroke-[var(--color-ink)] transition-all" strokeWidth={2} />
+        <ChevronRight
+          className="w-[22px] h-[22px] stroke-[var(--color-ink)] transition-all"
+          strokeWidth={2}
+        />
       </button>
 
       {/* Pagination dots */}
