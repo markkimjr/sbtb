@@ -7,7 +7,8 @@
     "dev": "turbo dev",
     "lint": "turbo lint",
     "format": "biome format --write .",
-    "typecheck": "turbo typecheck"
+    "typecheck": "turbo typecheck",
+    "generate-api": "pnpm -C packages/client generate"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",

@@ -178,3 +178,6 @@ cython_debug/
 
 # Superpowers visual brainstorm tool — local-only mockup HTML
 .superpowers/
+
+# Ignore tsconfig.tsbuildinfo
+*.tsbuildinfo
