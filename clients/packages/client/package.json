@@ -1,0 +1,21 @@
+{
+  "name": "@sbtb/client",
+  "version": "0.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "uv run --directory ../../../server -m scripts.generate_openapi | openapi-typescript --enum-values -o ./src/v1.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "openapi-fetch": "^0.15.0"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.10.0",
+    "typescript": "^5.7.0"
+  }
+}
