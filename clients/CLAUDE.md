@@ -4,7 +4,7 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## Project Overview
 
-**Saved By The Bell (sbtb) — clients monorepo.** Turborepo + pnpm workspaces. Currently contains one app (`apps/web/`), the main Next.js website. Additional apps (e.g. `apps/app/` for React Native iOS/Android) may be added under `apps/` in the future. Shared packages live in `packages/` (currently empty placeholder).
+**Saved By The Bell (sbtb) — clients monorepo.** Turborepo + pnpm workspaces. Currently contains one app (`apps/web/`), the main Next.js website. Additional apps (e.g. `apps/app/` for React Native iOS/Android) may be added under `apps/` in the future. Shared packages live in `packages/` — currently one: `@sbtb/client`, the typed API client generated from the FastAPI OpenAPI schema.
 
 - **Runtime:** Node >= 22, pnpm 10.28
 - **Web app:** Next.js 15, React 19, TypeScript, Tailwind CSS 4, shadcn/ui, Zustand, TanStack Query, Framer Motion, Vitest
@@ -34,6 +34,9 @@ pnpm typecheck       # tsc --noEmit
 # Tests (Vitest)
 pnpm test            # vitest run (single pass)
 pnpm test:watch      # vitest (watch mode)
+
+# Regenerate the typed API client from the FastAPI OpenAPI schema (from clients/ root)
+pnpm generate-api    # writes packages/client/src/v1.ts
 ```
 
 ## Monorepo Structure
@@ -42,7 +45,8 @@ pnpm test:watch      # vitest (watch mode)
 clients/
   apps/
     web/              # @sbtb/web — main Next.js website
-  packages/           # future shared packages (currently empty)
+  packages/
+    client/           # @sbtb/client — typed API client generated from FastAPI OpenAPI
   biome.json          # root Biome config (lint + format rules)
   tsconfig.base.json  # shared TypeScript compiler options
   turbo.json          # Turborepo task pipeline
@@ -74,7 +78,7 @@ src/
     header.tsx
   hooks/              # custom React hooks
   lib/
-    api-client.ts     # apiFetch — thin fetch wrapper with JWT injection
+    api-client.ts     # apiClient — typed openapi-fetch client with Supabase JWT middleware
     env.ts            # Zod-validated env vars (throws at startup if missing)
     fonts.ts          # Fraunces + Inter font definitions
     supabase/
@@ -89,7 +93,7 @@ src/
     carousel.ts       # Zustand: fighter carousel index + navigation
     modal.ts          # Zustand: bookmark set, first-bookmark modal, intro-seen flag
   types/
-    fighter.ts        # Fighter and WeightClass types (mirrors backend schemas)
+    fighter.ts        # FeaturedFighter — re-exported from @sbtb/client (frontend domain alias)
 ```
 
 ### Route Groups
@@ -108,13 +112,42 @@ Auth is handled by **Supabase `@supabase/ssr`** directly — there is no FastAPI
 
 ### API Client
 
-`lib/api-client.ts` exports `apiFetch<T>(path, init?)` — a thin wrapper around `fetch` that:
-1. Reads the current Supabase session from the browser client.
-2. Injects `Authorization: Bearer <access_token>` if a session exists.
-3. Prefixes the path with `NEXT_PUBLIC_API_URL`.
-4. Throws `ApiError(status, detail)` on non-2xx responses.
+All calls to the FastAPI backend go through the **typed `apiClient`** from `@sbtb/client` (built on [`openapi-fetch`](https://openapi-ts.dev/openapi-fetch/)). Path strings, params, and response bodies are typed end-to-end from the generated `packages/client/src/v1.ts`.
 
-All calls to the FastAPI backend should go through `apiFetch`.
+`lib/api-client.ts`:
+1. Constructs the client with `baseUrl: env.NEXT_PUBLIC_API_URL`.
+2. Registers an `onRequest` middleware that reads the current Supabase session and injects `Authorization: Bearer <access_token>` if present.
+3. Re-exports `ApiError` from `@sbtb/client` for throw-style error handling at call sites.
+
+Call sites use `{ data, error, response }` destructuring and throw `ApiError` on failure:
+
+```ts
+import { ApiError, apiClient } from "@/lib/api-client";
+
+const { data, error, response } = await apiClient.GET("/api/fighter/featured");
+if (error || !data) {
+  throw new ApiError(response.status, error?.detail?.toString() ?? response.statusText);
+}
+return data;  // typed as components["schemas"]["FeaturedFighterRead"][]
+```
+
+#### Generated types & view models
+
+`packages/client/src/v1.ts` is auto-generated from the FastAPI OpenAPI schema — **do not edit it by hand**. To refresh after a backend schema change: `pnpm generate-api` from `clients/`.
+
+Frontend types follow a two-layer rule:
+
+- **Wire shapes (generated)** — anything that crosses the network from FastAPI lives in `@sbtb/client`. Re-export with friendlier names from `src/types/{domain}.ts`:
+  ```ts
+  import type { Schemas } from "@sbtb/client";
+  export type FeaturedFighter = Schemas["FeaturedFighterRead"];
+  ```
+- **View models (hand-written)** — UI-only state and compositions that combine generated types with frontend concerns:
+  ```ts
+  export type FighterCardVM = FeaturedFighter & { isBookmarked: boolean };
+  ```
+
+Never push UI-only fields (e.g. CSS gradients, modal flags, form-dirty state) into the backend schema just to centralize types. The backend defines wire shapes; the frontend composes view models on top.
 
 ### Environment Variables
 
@@ -124,7 +157,7 @@ Validated at startup via Zod in `lib/env.ts`. Import `env` from there — never 
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
-| `NEXT_PUBLIC_API_URL` | FastAPI backend base URL (e.g. `http://localhost:8000/api`) |
+| `NEXT_PUBLIC_API_URL` | FastAPI backend base URL — **no `/api` suffix** (the OpenAPI paths already carry the prefix). E.g. `http://localhost:8000` |
 
 Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in values.
 
@@ -143,10 +176,10 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in values.
 
 ```ts
 // Good
-import { apiFetch } from "@/lib/api-client";
+import { apiClient } from "@/lib/api-client";
 
 // Avoid
-import { apiFetch } from "../../lib/api-client";
+import { apiClient } from "../../lib/api-client";
 ```
 
 ### Design Tokens & Fonts

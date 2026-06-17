@@ -23,6 +23,9 @@ uvicorn sbtb.app:app --reload
 uv run alembic upgrade head                              # Apply all migrations
 uv run alembic revision --autogenerate -m "description" # Create new migration
 
+# Print the OpenAPI schema to stdout (consumed by the frontend's @sbtb/client generator)
+uv run -m scripts.generate_openapi
+
 # Linting and formatting
 uv run ruff check .          # Lint
 uv run ruff check --fix .    # Lint and auto-fix
@@ -52,6 +55,13 @@ Key entities: `Fighter`, `FightCard`, `Bout`, `Rank`, `FightOrganization`, `Weig
 
 ### Migrations (`migrations/`)
 Alembic migrations at `server/migrations/`, same level as `server/sbtb/`.
+
+### Scripts (`scripts/`)
+Out-of-band utilities run via `uv run -m scripts.<name>`. These are not part of the `sbtb` package — they import from it.
+
+- `scripts/generate_openapi.py` — imports `sbtb.app:app` and prints `app.openapi()` as JSON to stdout. Consumed by the frontend's `@sbtb/client` package to regenerate its typed client (`pnpm generate-api` from `clients/` pipes this into `openapi-typescript`).
+
+**Whenever you change a FastAPI route, request/response schema, or Pydantic model exposed to the API, the frontend's generated client (`clients/packages/client/src/v1.ts`) is now stale.** Regenerate by running `pnpm generate-api` from `clients/` (or `cd clients/packages/client && pnpm generate`).
 
 ## Environment Configuration
 
