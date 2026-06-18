@@ -16,7 +16,7 @@ uv sync
 source .venv/bin/activate
 
 # Run development server
-export PYTHONUNBUFFERED=1 SBTB_ENV=local
+export PYTHONUNBUFFERED=1 SBTB_ENV=local_production
 uvicorn sbtb.app:app --reload
 
 # Database migrations
@@ -41,6 +41,16 @@ uv run ruff format .         # Format
 ### Domain Modules
 Each domain follows this pattern: `{domain}/routes.py`, `{domain}/schemas.py`, `{domain}/service.py`, `{domain}/repository.py`
 - `fighter/` — Fighter rankings, fight cards, scraping (BoxingRankScraper, BoxingFightCardScraper)
+
+### Auth & User Provisioning
+
+- **`auth/jwt.py`** — JWKS-only ES256/RS256 verification of Supabase JWTs. No shared secret.
+- **`auth/dependencies.py`** — `CurrentUserDep` (auth required, lazy-provisions `public.users` row) and `OptionalCurrentUserDep`
+- **`auth/permissions.py`** — `SuperuserDep` (delegates to `CurrentUserDep`, 403s when `is_superuser=False`)
+- **`user/routes.py`** — `GET /api/user/me` returns the current user's backend profile (`UserMeRead`)
+- **`user/service.py`** — `UserService.get_or_provision_from_jwt` — first authenticated request creates the row
+
+`public.users` rows are provisioned **lazily** the first time an authenticated request hits `CurrentUserDep`. Race-safe via `INSERT ... ON CONFLICT (id) DO NOTHING`. The provisioning helper is `UserRepository.upsert_from_jwt`.
 
 ### Core (`sbtb/core/`)
 - `config.py` — Settings via pydantic-settings; `SBTB_ENV` selects `.env.local`, `.env.test`, or `.env.prod`
