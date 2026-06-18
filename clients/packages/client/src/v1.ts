@@ -72,6 +72,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/user/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Me */
+        get: operations["get_me_api_user_me_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -182,6 +199,28 @@ export interface components {
          * @enum {string}
          */
         RankType: "champion" | "interim_champion" | "champion_in_recess" | "contender";
+        /**
+         * UserMeRead
+         * @description Frontend-facing user profile. Camel-cased on the wire via BaseSchema.
+         */
+        UserMeRead: {
+            /**
+             * Id
+             * Format: uuid4
+             * @description The ID of the object.
+             */
+            id: string;
+            /** Email */
+            email?: string | null;
+            /** Notificationemail */
+            notificationEmail?: string | null;
+            /** Timezone */
+            timezone?: string | null;
+            /** Isactive */
+            isActive: boolean;
+            /** Issuperuser */
+            isSuperuser: boolean;
+        };
         /** ValidationError */
         ValidationError: {
             /** Location */
@@ -291,6 +330,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_me_api_user_me_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Current authenticated user's profile */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserMeRead"];
                 };
             };
         };

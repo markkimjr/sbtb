@@ -181,3 +181,5 @@ cython_debug/
 
 # Ignore tsconfig.tsbuildinfo
 *.tsbuildinfo
+clients/apps/web/tsconfig.tsbuildinfo
+clients/packages/client/tsconfig.tsbuildinfo

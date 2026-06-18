@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@vitejs/plugin-react": "^6.0.2",
     "turbo": "^2.3.0",
     "typescript": "^5.7.0"
   },
