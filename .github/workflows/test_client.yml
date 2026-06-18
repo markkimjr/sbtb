@@ -1,0 +1,82 @@
+name: Client
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ./clients
+
+jobs:
+  changes:
+    name: Detect changes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      clients: ${{ steps.filter.outputs.clients }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            clients:
+              - 'clients/**'
+              - '.github/workflows/test_client.yml'
+
+  test:
+    name: "Client: Tests 🎨"
+    needs: changes
+    if: needs.changes.outputs.clients == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          package_json_file: clients/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: pnpm
+          cache-dependency-path: clients/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Format check (biome)
+        run: pnpm format --check
+
+      - name: Lint (biome)
+        working-directory: ./clients/apps/web
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Tests (vitest)
+        working-directory: ./clients/apps/web
+        run: pnpm test
+
+      - name: Build
+        working-directory: ./clients/apps/web
+        # Dummy env vars satisfy Zod validation in env.ts at build time.
+        # Real secrets are never needed for a build check.
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: "https://placeholder.supabase.co"
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_placeholder_ci_value"
+          NEXT_PUBLIC_API_URL: "https://placeholder.api.example.com"
+        run: pnpm build
