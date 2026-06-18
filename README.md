@@ -2,6 +2,14 @@
 
 Never miss a fight. **Saved By The Bell** notifies you when your favorite boxer is scheduled to compete next.
 
+## Why
+
+Unlike the NBA, NFL, or MLB — where every team plays on a fixed schedule published months in advance — boxing has no central organizing body. Fights are negotiated and announced independently, sometimes just weeks out, spread across dozens of promoters and broadcasters.
+
+Boxing fans don't follow a team. They follow individual fighters: Ryan Garcia, Gervonta Davis, Canelo Álvarez. But there's no reliable way to know when your fighter is next scheduled to compete without constantly checking Twitter, ESPN, and individual promoter sites.
+
+Saved By The Bell solves this. Bookmark the fighters you care about, and we'll do the watching for you — notifying you the moment a fight is announced and reminding you as it gets closer.
+
 Browse a curated roster of active fighters, bookmark the ones you follow, and get an email the moment a fight card drops with them on it. No more checking sports sites daily — we ring the bell when it matters.
 
 ## What it does
