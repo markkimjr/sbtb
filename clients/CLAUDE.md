@@ -77,6 +77,7 @@ src/
     profile/          # profile-specific components
     header.tsx
   hooks/              # custom React hooks
+    use-current-user.ts  # useCurrentUser — merges Supabase identity + GET /user/me profile
   lib/
     api-client.ts     # apiClient — typed openapi-fetch client with Supabase JWT middleware
     env.ts            # Zod-validated env vars (throws at startup if missing)
@@ -108,7 +109,7 @@ Auth is handled by **Supabase `@supabase/ssr`** directly — there is no FastAPI
 - **Browser client** (`lib/supabase/browser.ts`) — used in Client Components and hooks.
 - **Server client** (`lib/supabase/server.ts`) — used in Server Components and Route Handlers; reads/writes cookies via `next/headers`.
 - **Middleware** (`middleware.ts` + `lib/supabase/middleware.ts`) — calls `supabase.auth.getUser()` on every non-static request to refresh the session cookie. Also redirects unauthenticated users away from protected routes (`/profile`).
-- **`AuthListener`** (`providers/auth-listener.tsx`) — a `"use client"` component mounted in the root layout that subscribes to `onAuthStateChange` and invalidates the `["auth", "user"]` TanStack Query key. This keeps `useUser()` in sync across tabs and after login/logout.
+- **`AuthListener`** (`providers/auth-listener.tsx`) — a `"use client"` component mounted in the root layout that subscribes to `onAuthStateChange` and invalidates the `["auth", "user"]` TanStack Query key. This keeps `useCurrentUser()` in sync across tabs and after login/logout.
 
 ### API Client
 
@@ -130,6 +131,12 @@ if (error || !data) {
 }
 return data;  // typed as components["schemas"]["FeaturedFighterRead"][]
 ```
+
+The frontend's primary auth hook is `useCurrentUser()` (from `@/hooks/use-current-user`).
+It returns `{ supabaseUser, profile, isLoading, error }` where `supabaseUser` is the
+Supabase `User` (id, email, identities, ...) and `profile` is the backend's `UserMeRead`
+(timezone, notification_email, is_superuser, ...). Components that need only identity
+can use `supabaseUser`; components that need backend domain data use `profile`.
 
 #### Generated types & view models
 
@@ -156,14 +163,14 @@ Validated at startup via Zod in `lib/env.ts`. Import `env` from there — never 
 | Variable | Description |
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase anon/public key |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Supabase publishable key (`sb_publishable_...`) — replaces legacy "anon" key |
 | `NEXT_PUBLIC_API_URL` | FastAPI backend base URL — **no `/api` suffix** (the OpenAPI paths already carry the prefix). E.g. `http://localhost:8000` |
 
 Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in values.
 
 ### State Management
 
-- **TanStack Query** — server state (API data, auth user). `useUser()` uses `staleTime: Infinity` and is invalidated on auth events by `AuthListener`.
+- **TanStack Query** — server state (API data, auth user). `useCurrentUser()` uses `staleTime: Infinity` and is invalidated on auth events by `AuthListener`.
 - **Zustand** — UI-only state that doesn't need to be fetched:
   - `useCarouselStore` — active carousel index and total count.
   - `useModalStore` — in-memory bookmark set, first-bookmark modal open state, and `hasSeenIntro` flag.
