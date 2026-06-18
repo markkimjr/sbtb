@@ -11,7 +11,7 @@ logger = structlog.get_logger(__name__)
 
 security = HTTPBearer()
 
-# Lazily initialized JWKS client for asymmetric key verification (Supabase CLI 2.x)
+# Lazily-initialized JWKS client for ES256/RS256 verification
 _jwks_client: jwt.PyJWKClient | None = None
 
 
@@ -41,28 +41,14 @@ async def validate_jwt_token(
     token: str = Depends(get_access_token),
 ) -> JWTValidationResult:
     try:
-        header = jwt.get_unverified_header(token)
-        alg = header.get("alg", "HS256")
-
-        if alg == "HS256":
-            payload = jwt.decode(
-                token,
-                settings.JWT_SECRET,
-                audience="authenticated",
-                algorithms=["HS256"],
-                leeway=3,
-            )
-        else:
-            # Asymmetric algorithm (ES256, RS256) — verify via JWKS
-            signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
-            payload = jwt.decode(
-                token,
-                signing_key.key,
-                audience="authenticated",
-                algorithms=["ES256", "RS256"],
-                leeway=3,
-            )
-
+        signing_key = _get_jwks_client().get_signing_key_from_jwt(token)
+        payload = jwt.decode(
+            token,
+            signing_key.key,
+            audience="authenticated",
+            algorithms=["ES256", "RS256"],
+            leeway=3,
+        )
         return JWTValidationResult(is_valid=True, payload=payload, jwt=token)
     except Exception:
         logger.exception("Error validating JWT token")

@@ -2,10 +2,12 @@ from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, PlainTextResponse, Response
 
 from .fighter.routes import router as fighter_router
+from .user.routes import router as user_router
 
 api_router = APIRouter(prefix="/api")
 
 api_router.include_router(fighter_router)
+api_router.include_router(user_router)
 
 
 @api_router.get("/", response_description="Root", include_in_schema=False)

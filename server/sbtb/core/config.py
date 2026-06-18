@@ -61,8 +61,6 @@ class Settings(BaseSettings):
     SUPABASE_URL: str | None = None
     SUPABASE_SECRET_KEY: str | None = None
 
-    JWT_SECRET: str | None = None
-
     SERPAPI_KEY: str | None = None
     OPENAI_API_KEY: str | None = None
     GEMINI_API_KEY: str | None = None

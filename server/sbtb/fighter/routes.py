@@ -1,6 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse, Response
 
+from sbtb.auth.permissions import SuperuserDep
 from sbtb.core.database.session import DbSession
 from sbtb.fighter.avatar_generators import gemini_fighter_image_generator
 from sbtb.fighter.schemas import AvatarGenerationResult, FeaturedFighterRead, FightCardRead, RankRead
@@ -19,9 +20,15 @@ async def fighter_root() -> Response:
 
 
 @router.get(
-    "/update-boxing-ranks", response_description="Update boxing ranks", response_model=list[RankRead], tags=["fighters"]
+    "/update-boxing-ranks",
+    response_description="Update boxing ranks",
+    response_model=list[RankRead],
+    tags=["fighters"],
 )
-async def scrape_and_save_boxing_ranks(session: DbSession) -> list[RankRead]:
+async def scrape_and_save_boxing_ranks(
+    session: DbSession,
+    _superuser: SuperuserDep,
+) -> list[RankRead]:
     return await boxer_scraper_service.scrape_and_update_boxing_ranks(session=session)
 
 
@@ -31,7 +38,10 @@ async def scrape_and_save_boxing_ranks(session: DbSession) -> list[RankRead]:
     response_model=list[FightCardRead],
     tags=["fighters"],
 )
-async def scrape_and_save_boxing_fight_cards(session: DbSession) -> list[FightCardRead]:
+async def scrape_and_save_boxing_fight_cards(
+    session: DbSession,
+    _superuser: SuperuserDep,
+) -> list[FightCardRead]:
     return await boxing_fight_card_service.scrape_and_update_boxing_fight_cards(session=session)
 
 
@@ -41,7 +51,10 @@ async def scrape_and_save_boxing_fight_cards(session: DbSession) -> list[FightCa
     response_model=AvatarGenerationResult,
     tags=["fighters"],
 )
-async def generate_fighter_avatars(session: DbSession) -> AvatarGenerationResult:
+async def generate_fighter_avatars(
+    session: DbSession,
+    _superuser: SuperuserDep,
+) -> AvatarGenerationResult:
     return await gemini_fighter_image_generator.generate_fighter_avatars(session=session)
 
 
