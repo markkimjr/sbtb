@@ -1,2 +1,32 @@
-# sbtb
-a simple app that notifies you when your favorite fighter is scheduled to fight
+# Saved By The Bell
+
+Never miss a fight. **Saved By The Bell** notifies you when your favorite boxer is scheduled to compete next.
+
+Browse a curated roster of active fighters, bookmark the ones you follow, and get an email the moment a fight card drops with them on it. No more checking sports sites daily — we ring the bell when it matters.
+
+## What it does
+
+- **Fighter discovery** — browse ranked fighters across all weight classes with Ghibli-style portraits
+- **Bookmarks** — save fighters you want to follow
+- **Fight card tracking** — crawls upcoming fight cards and matches them against your bookmarks
+- **Email notifications** — sends you a heads-up when a bookmarked fighter is scheduled to fight
+- **Notification preferences** — choose which alerts you receive: when a fight is first announced, 1 week out, 1 day before, and day-of. Turn each on or off independently so you only get the reminders that matter to you
+
+## Stack
+
+**Backend** — Python 3.12, FastAPI, SQLAlchemy (async), PostgreSQL via Supabase, asyncpg
+
+**Frontend** — Next.js 15, React 19, TypeScript, Tailwind CSS 4, Supabase Auth
+
+**Infrastructure** — Supabase (database + auth + storage), Sentry (error tracking)
+
+## Repo structure
+
+```
+sbtb/
+├── server/          # FastAPI backend
+└── clients/
+    └── apps/web/    # Next.js frontend
+```
+
+See `server/CLAUDE.md` and `clients/CLAUDE.md` for development setup and conventions.
