@@ -2134,6 +2134,7 @@ dev = [
     { name = "ruff" },
 ]
 test = [
+    { name = "cryptography" },
     { name = "httpx" },
     { name = "psycopg2-binary" },
     { name = "pytest" },
@@ -2176,6 +2177,7 @@ dev = [
     { name = "ruff", specifier = ">=0.15.13" },
 ]
 test = [
+    { name = "cryptography", specifier = ">=42.0" },
     { name = "httpx", specifier = ">=0.28.0" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "pytest", specifier = ">=8.3.0" },
