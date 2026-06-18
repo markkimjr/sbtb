@@ -1,12 +1,12 @@
 "use client";
 
+import { useCurrentUser } from "@/hooks/use-current-user";
+import { useModalStore } from "@/store/modal";
 import { usePathname, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "@/hooks/use-user";
-import { useModalStore } from "@/store/modal";
 
 export function useToggleBookmark() {
-  const { data: user } = useUser();
+  const { supabaseUser: user } = useCurrentUser();
   const router = useRouter();
   const pathname = usePathname();
   const { bookmarks, hasSeenIntro, addBookmark, removeBookmark, openFirstBookmark } =

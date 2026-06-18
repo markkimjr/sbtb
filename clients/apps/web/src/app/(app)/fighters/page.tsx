@@ -4,16 +4,16 @@ import { BookmarkButton } from "@/components/fighters/bookmark-button";
 import { FighterCarousel } from "@/components/fighters/fighter-carousel";
 import { FighterSearchBar } from "@/components/fighters/fighter-search-bar";
 import { FirstBookmarkModal } from "@/components/fighters/first-bookmark-modal";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { useFeaturedFighters } from "@/hooks/use-featured-fighters";
 import { useToggleBookmark } from "@/hooks/use-toggle-bookmark";
-import { useUser } from "@/hooks/use-user";
 import { useEffect, useState } from "react";
 
 export default function FightersPage() {
   const [, setQuery] = useState("");
   const { data: fighters = [] } = useFeaturedFighters();
 
-  const { data: user } = useUser();
+  const { supabaseUser: user } = useCurrentUser();
   const { toggle, isBookmarked } = useToggleBookmark();
 
   // Honor ?fighter= from a post-signup redirect — auto-bookmark on sign-in.

@@ -1,6 +1,6 @@
+import { useModalStore } from "@/store/modal";
 import { act, renderHook } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { useModalStore } from "@/store/modal";
 
 const mockPush = vi.fn();
 vi.mock("next/navigation", () => ({
@@ -8,14 +8,14 @@ vi.mock("next/navigation", () => ({
   usePathname: () => "/fighters",
 }));
 
-vi.mock("./use-user", () => ({
-  useUser: vi.fn(),
+vi.mock("./use-current-user", () => ({
+  useCurrentUser: vi.fn(),
 }));
 
-import { useUser } from "./use-user";
+import { useCurrentUser } from "./use-current-user";
 import { useToggleBookmark } from "./use-toggle-bookmark";
 
-const mockedUseUser = vi.mocked(useUser);
+const mockedUseCurrentUser = vi.mocked(useCurrentUser);
 
 describe("useToggleBookmark", () => {
   beforeEach(() => {
@@ -28,20 +28,22 @@ describe("useToggleBookmark", () => {
   });
 
   it("redirects to signup when unauthenticated", () => {
-    mockedUseUser.mockReturnValue({ data: null } as ReturnType<typeof useUser>);
+    mockedUseCurrentUser.mockReturnValue({
+      supabaseUser: null,
+    } as ReturnType<typeof useCurrentUser>);
     const { result } = renderHook(() => useToggleBookmark());
 
     act(() => {
       result.current.toggle("inoue");
     });
 
-    expect(mockPush).toHaveBeenCalledWith(
-      "/signup?next=%2Ffighters&fighter=inoue",
-    );
+    expect(mockPush).toHaveBeenCalledWith("/signup?next=%2Ffighters&fighter=inoue");
   });
 
   it("opens first-bookmark modal on first save when authed + no prior bookmarks", () => {
-    mockedUseUser.mockReturnValue({ data: { id: "u1" } } as ReturnType<typeof useUser>);
+    mockedUseCurrentUser.mockReturnValue({
+      supabaseUser: { id: "u1" },
+    } as ReturnType<typeof useCurrentUser>);
     const { result } = renderHook(() => useToggleBookmark());
 
     act(() => {
@@ -55,7 +57,9 @@ describe("useToggleBookmark", () => {
   });
 
   it("silently toggles after intro is seen", () => {
-    mockedUseUser.mockReturnValue({ data: { id: "u1" } } as ReturnType<typeof useUser>);
+    mockedUseCurrentUser.mockReturnValue({
+      supabaseUser: { id: "u1" },
+    } as ReturnType<typeof useCurrentUser>);
     useModalStore.setState({ hasSeenIntro: true });
     const { result } = renderHook(() => useToggleBookmark());
 
@@ -68,7 +72,9 @@ describe("useToggleBookmark", () => {
   });
 
   it("toggles off an already-bookmarked fighter without modal", () => {
-    mockedUseUser.mockReturnValue({ data: { id: "u1" } } as ReturnType<typeof useUser>);
+    mockedUseCurrentUser.mockReturnValue({
+      supabaseUser: { id: "u1" },
+    } as ReturnType<typeof useCurrentUser>);
     useModalStore.setState({
       hasSeenIntro: true,
       bookmarks: new Set(["inoue"]),

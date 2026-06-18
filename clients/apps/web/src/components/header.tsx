@@ -1,8 +1,5 @@
 "use client";
 
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,12 +9,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useUser } from "@/hooks/use-user";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { createClient } from "@/lib/supabase/browser";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 
 export function Header() {
   const router = useRouter();
-  const { data: user, isLoading } = useUser();
+  const { supabaseUser: user, isLoading } = useCurrentUser();
 
   async function onSignOut() {
     const supabase = createClient();
@@ -52,7 +52,9 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-44">
               <DropdownMenuItem>
-                <Link href="/profile" className="w-full">Profile</Link>
+                <Link href="/profile" className="w-full">
+                  Profile
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={onSignOut}>Sign out</DropdownMenuItem>

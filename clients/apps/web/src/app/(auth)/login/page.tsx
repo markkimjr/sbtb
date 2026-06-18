@@ -1,11 +1,16 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
+import { LoginErrorToast } from "@/components/auth/login-error-toast";
 import { LoginForm } from "@/components/auth/login-form";
+import { MagicLinkButton } from "@/components/auth/magic-link-button";
 
 export default function LoginPage() {
   return (
     <div className="space-y-6">
+      <Suspense>
+        <LoginErrorToast />
+      </Suspense>
       <header className="space-y-2 text-center">
         <h1 className="font-display italic text-3xl">Welcome back.</h1>
         <p className="text-sm opacity-70">
@@ -27,6 +32,13 @@ export default function LoginPage() {
       <Suspense>
         <LoginForm />
       </Suspense>
+
+      <div className="pt-2 border-t border-[var(--color-sand)]">
+        <p className="text-xs opacity-60 text-center mb-2">Trouble logging in?</p>
+        <Suspense>
+          <MagicLinkButton />
+        </Suspense>
+      </div>
 
       <div className="space-y-2 text-center text-sm">
         <Link href="/forgot-password" className="opacity-70 hover:opacity-100 underline block">
