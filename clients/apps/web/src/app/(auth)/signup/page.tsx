@@ -1,7 +1,7 @@
+import { GoogleOAuthButton } from "@/features/auth/components/google-oauth-button";
+import { SignupForm } from "@/features/auth/components/signup-form";
 import Link from "next/link";
 import { Suspense } from "react";
-import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
-import { SignupForm } from "@/components/auth/signup-form";
 
 export default function SignupPage() {
   return (

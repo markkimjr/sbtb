@@ -57,45 +57,58 @@ clients/
 
 ### Directory Layout
 
+The app is organized **feature-first**: everything specific to one domain (components,
+hooks, store, types) lives under `src/features/<feature>/`. Only genuinely cross-cutting
+code lives at the top level (`components/ui`, `components/layout`, `hooks`, `lib`,
+`providers`, `test-utils`).
+
 ```
 src/
-  app/
-    (app)/            # authenticated shell — wrapped in Header + main layout
-      fighters/       # /fighters — main fighter browsing page
-      profile/        # /profile — bookmarked fighters + notification prefs
-    (auth)/           # unauthenticated auth pages — centered card layout
-      login/
-      signup/
-      forgot-password/
-      verify-email/
-    auth/callback/    # Supabase OAuth callback route handler
-    layout.tsx        # root layout: fonts, ThemeProvider, QueryProvider, AuthListener, Toaster
+  app/                  # routing only — thin pages that compose feature components
+    (app)/              # authenticated shell — wrapped in Header + main layout
+      fighters/         # /fighters — main fighter browsing page
+      profile/          # /profile — bookmarked fighters + notification prefs
+    (auth)/             # unauthenticated auth pages — centered card layout
+      login/  signup/  forgot-password/  reset-password/  verify-email/
+    auth/callback/      # Supabase OAuth callback route handler
+    layout.tsx          # root layout: fonts, ThemeProvider, QueryProvider, AuthListener, Toaster
+  features/
+    auth/
+      components/       # login/signup/forgot/reset/verify forms, Google OAuth, magic link
+    fighters/
+      components/       # fighter-card, fighter-carousel, bookmark-button, search-bar, first-bookmark-modal
+      hooks/            # use-featured-fighters
+      store/            # carousel.ts (index/nav)
+      types.ts          # FeaturedFighter — re-exported from @sbtb/client (frontend domain alias)
+    bookmarks/          # shared bookmark domain — depended on by fighters + profile
+      hooks/            # use-toggle-bookmark (auth-gate + toggle + first-save intro flow)
+      store/            # bookmarks.ts (useBookmarkStore: saved-id set, hasSeenIntro, first-bookmark modal state)
+    profile/
+      components/       # notification prefs, bookmarked-fighters grid, set-password, account footer
   components/
-    ui/               # shadcn/ui primitives (button, card, dialog, etc.)
-    auth/             # auth form components
-    fighters/         # fighter-specific components
-    profile/          # profile-specific components
-    header.tsx
-  hooks/              # custom React hooks
-    use-current-user.ts  # useCurrentUser — merges Supabase identity + GET /user/me profile
+    ui/                 # shadcn/ui primitives (button, card, dialog, etc.)
+    layout/
+      header.tsx        # shared app-shell header
+  hooks/                # cross-cutting hooks only
+    use-current-user.ts # useCurrentUser — merges Supabase identity + GET /user/me profile (used app-wide)
   lib/
-    api-client.ts     # apiClient — typed openapi-fetch client with Supabase JWT middleware
-    env.ts            # Zod-validated env vars (throws at startup if missing)
-    fonts.ts          # Fraunces + Inter font definitions
+    api-client.ts       # apiClient — typed openapi-fetch client with Supabase JWT middleware
+    env.ts              # Zod-validated env vars (throws at startup if missing)
+    fonts.ts            # Fraunces + Inter font definitions
     supabase/
-      browser.ts      # createClient() — browser Supabase client
-      server.ts       # createClient() — server-side Supabase client (cookies)
-      middleware.ts    # updateSession() — refreshes Supabase session in middleware
+      browser.ts        # createClient() — browser Supabase client
+      server.ts         # createClient() — server-side Supabase client (cookies)
+      middleware.ts     # updateSession() — refreshes Supabase session in middleware
   providers/
-    auth-listener.tsx # invalidates TanStack Query user cache on auth state change
+    auth-listener.tsx   # invalidates TanStack Query user cache on auth state change
     query-provider.tsx
     theme-provider.tsx
-  store/
-    carousel.ts       # Zustand: fighter carousel index + navigation
-    modal.ts          # Zustand: bookmark set, first-bookmark modal, intro-seen flag
-  types/
-    fighter.ts        # FeaturedFighter — re-exported from @sbtb/client (frontend domain alias)
 ```
+
+**Placement rule:** if something is used by a single feature, it lives in that feature;
+if it's shared by many features, it's promoted to a top-level shared folder (`lib`,
+`hooks`, `components/ui`, `components/layout`). Cross-feature component imports are a
+smell — features should depend on shared code, not on each other.
 
 ### Route Groups
 
@@ -144,7 +157,7 @@ can use `supabaseUser`; components that need backend domain data use `profile`.
 
 Frontend types follow a two-layer rule:
 
-- **Wire shapes (generated)** — anything that crosses the network from FastAPI lives in `@sbtb/client`. Re-export with friendlier names from `src/types/{domain}.ts`:
+- **Wire shapes (generated)** — anything that crosses the network from FastAPI lives in `@sbtb/client`. Re-export with friendlier names from the owning feature's `src/features/<feature>/types.ts`:
   ```ts
   import type { Schemas } from "@sbtb/client";
   export type FeaturedFighter = Schemas["FeaturedFighterRead"];
@@ -172,8 +185,8 @@ Copy `apps/web/.env.example` to `apps/web/.env.local` and fill in values.
 
 - **TanStack Query** — server state (API data, auth user). `useCurrentUser()` uses `staleTime: Infinity` and is invalidated on auth events by `AuthListener`.
 - **Zustand** — UI-only state that doesn't need to be fetched:
-  - `useCarouselStore` — active carousel index and total count.
-  - `useModalStore` — in-memory bookmark set, first-bookmark modal open state, and `hasSeenIntro` flag.
+  - `useCarouselStore` (`features/fighters/store/carousel.ts`) — active carousel index and total count.
+  - `useBookmarkStore` (`features/bookmarks/store/bookmarks.ts`) — in-memory bookmark set, first-bookmark modal open state, and `hasSeenIntro` flag.
 
 > **Note:** Bookmarks are currently stored in-memory in Zustand (mock data). Persistence to the backend is not yet implemented.
 
@@ -229,7 +242,7 @@ pnpm test            # single run (CI)
 pnpm test:watch      # watch mode (development)
 ```
 
-Test files live next to the code they test (e.g. `hooks/use-toggle-bookmark.test.ts`, `store/carousel.test.ts`).
+Test files live next to the code they test (e.g. `features/fighters/hooks/use-toggle-bookmark.test.ts`, `features/fighters/store/carousel.test.ts`).
 
 ## Coding Style & Conventions
 
@@ -244,7 +257,7 @@ Test files live next to the code they test (e.g. `hooks/use-toggle-bookmark.test
 - All interactive or browser-API-dependent components must be `"use client"`.
 - Server Components are the default — avoid `"use client"` unless necessary.
 - shadcn/ui components live in `components/ui/` and should not be modified directly. Wrap or compose them for customisation.
-- Domain components (`components/fighters/`, `components/auth/`, etc.) are the right place for feature-specific logic.
+- Feature components live in `features/<feature>/components/` and are the right place for feature-specific logic. Their hooks/store/types are colocated under the same feature.
 
 ### Auth Redirect Pattern
 

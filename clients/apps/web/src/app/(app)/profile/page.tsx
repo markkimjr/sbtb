@@ -1,7 +1,7 @@
-import { AccountFooter } from "@/components/profile/account-footer";
-import { BookmarkedFightersGrid } from "@/components/profile/bookmarked-fighters-grid";
-import { NotificationPreferences } from "@/components/profile/notification-preferences";
-import { SetPasswordBanner } from "@/components/profile/set-password-banner";
+import { AccountFooter } from "@/features/profile/components/account-footer";
+import { BookmarkedFightersGrid } from "@/features/profile/components/bookmarked-fighters-grid";
+import { NotificationPreferences } from "@/features/profile/components/notification-preferences";
+import { SetPasswordBanner } from "@/features/profile/components/set-password-banner";
 
 export default function ProfilePage() {
   return (

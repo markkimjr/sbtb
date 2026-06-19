@@ -1,9 +1,9 @@
+import { GoogleOAuthButton } from "@/features/auth/components/google-oauth-button";
+import { LoginErrorToast } from "@/features/auth/components/login-error-toast";
+import { LoginForm } from "@/features/auth/components/login-form";
+import { MagicLinkButton } from "@/features/auth/components/magic-link-button";
 import Link from "next/link";
 import { Suspense } from "react";
-import { GoogleOAuthButton } from "@/components/auth/google-oauth-button";
-import { LoginErrorToast } from "@/components/auth/login-error-toast";
-import { LoginForm } from "@/components/auth/login-form";
-import { MagicLinkButton } from "@/components/auth/magic-link-button";
 
 export default function LoginPage() {
   return (
@@ -13,9 +13,7 @@ export default function LoginPage() {
       </Suspense>
       <header className="space-y-2 text-center">
         <h1 className="font-display italic text-3xl">Welcome back.</h1>
-        <p className="text-sm opacity-70">
-          Log in to manage your fighters and notifications.
-        </p>
+        <p className="text-sm opacity-70">Log in to manage your fighters and notifications.</p>
       </header>
 
       <div className="space-y-4">

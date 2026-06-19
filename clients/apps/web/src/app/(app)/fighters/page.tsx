@@ -1,16 +1,15 @@
 "use client";
 
-import { BookmarkButton } from "@/components/fighters/bookmark-button";
-import { FighterCarousel } from "@/components/fighters/fighter-carousel";
-import { FighterSearchBar } from "@/components/fighters/fighter-search-bar";
-import { FirstBookmarkModal } from "@/components/fighters/first-bookmark-modal";
+import { useToggleBookmark } from "@/features/bookmarks/hooks/use-toggle-bookmark";
+import { BookmarkButton } from "@/features/fighters/components/bookmark-button";
+import { FighterCarousel } from "@/features/fighters/components/fighter-carousel";
+import { FighterSearchBar } from "@/features/fighters/components/fighter-search-bar";
+import { FirstBookmarkModal } from "@/features/fighters/components/first-bookmark-modal";
+import { useFeaturedFighters } from "@/features/fighters/hooks/use-featured-fighters";
 import { useCurrentUser } from "@/hooks/use-current-user";
-import { useFeaturedFighters } from "@/hooks/use-featured-fighters";
-import { useToggleBookmark } from "@/hooks/use-toggle-bookmark";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 export default function FightersPage() {
-  const [, setQuery] = useState("");
   const { data: fighters = [] } = useFeaturedFighters();
 
   const { supabaseUser: user } = useCurrentUser();
@@ -43,7 +42,7 @@ export default function FightersPage() {
             fight next.
           </p>
         </div>
-        <FighterSearchBar onChange={setQuery} />
+        <FighterSearchBar />
       </div>
 
       <FighterCarousel
