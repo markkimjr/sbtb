@@ -12,10 +12,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { createClient } from "@/lib/supabase/browser";
 
-const schema = z.object({
-  email: z.string().email("Enter a valid email"),
-  password: z.string().min(8, "At least 8 characters"),
-});
+const schema = z
+  .object({
+    email: z.string().email("Enter a valid email"),
+    password: z.string().min(8, "At least 8 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -27,7 +33,7 @@ export function SignupForm() {
 
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+    defaultValues: { email: "", password: "", confirmPassword: "" },
   });
 
   async function onSubmit(values: FormValues) {
@@ -86,7 +92,7 @@ export function SignupForm() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink)] opacity-40 hover:opacity-70 transition-opacity"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--color-ink)] opacity-40 hover:opacity-70 transition-opacity"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -95,6 +101,21 @@ export function SignupForm() {
         {form.formState.errors.password && (
           <p className="text-xs text-[var(--color-persimmon)]">
             {form.formState.errors.password.message}
+          </p>
+        )}
+      </div>
+
+      <div className="space-y-1.5">
+        <Label htmlFor="confirmPassword">Confirm password</Label>
+        <Input
+          id="confirmPassword"
+          type={showPassword ? "text" : "password"}
+          autoComplete="new-password"
+          {...form.register("confirmPassword")}
+        />
+        {form.formState.errors.confirmPassword && (
+          <p className="text-xs text-[var(--color-persimmon)]">
+            {form.formState.errors.confirmPassword.message}
           </p>
         )}
       </div>

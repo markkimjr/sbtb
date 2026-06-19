@@ -80,7 +80,7 @@ export function LoginForm() {
           <button
             type="button"
             onClick={() => setShowPassword((v) => !v)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--color-ink)] opacity-40 hover:opacity-70 transition-opacity"
+            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-[var(--color-ink)] opacity-40 hover:opacity-70 transition-opacity"
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
             {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
