@@ -5,6 +5,7 @@ type CarouselState = {
   total: number;
   next: () => void;
   prev: () => void;
+  advance: (delta: number) => void;
   setIndex: (i: number) => void;
   setTotal: (total: number) => void;
 };
@@ -21,6 +22,11 @@ export const useCarouselStore = create<CarouselState>((set, get) => ({
     const { index, total } = get();
     if (total === 0) return;
     set({ index: (index - 1 + total) % total });
+  },
+  advance: (delta) => {
+    const { index, total } = get();
+    if (total === 0) return;
+    set({ index: (((index + delta) % total) + total) % total });
   },
   setIndex: (i) => {
     const { total } = get();

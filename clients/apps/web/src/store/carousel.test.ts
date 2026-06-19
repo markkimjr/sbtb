@@ -32,6 +32,23 @@ describe("useCarouselStore", () => {
     expect(useCarouselStore.getState().index).toBe(4);
   });
 
+  it("advance() moves by multiple steps", () => {
+    useCarouselStore.getState().advance(3);
+    expect(useCarouselStore.getState().index).toBe(3);
+  });
+
+  it("advance() wraps forward past the end", () => {
+    useCarouselStore.setState({ index: 4, total: 5 });
+    useCarouselStore.getState().advance(3);
+    expect(useCarouselStore.getState().index).toBe(2);
+  });
+
+  it("advance() wraps backward past the start", () => {
+    useCarouselStore.setState({ index: 1, total: 5 });
+    useCarouselStore.getState().advance(-3);
+    expect(useCarouselStore.getState().index).toBe(3);
+  });
+
   it("setIndex() clamps to [0, total-1]", () => {
     useCarouselStore.getState().setIndex(99);
     expect(useCarouselStore.getState().index).toBe(4);
